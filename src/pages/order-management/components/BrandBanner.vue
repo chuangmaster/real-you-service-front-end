@@ -27,7 +27,7 @@
   font-weight: 700;
   letter-spacing: 6px;
   margin: 0 0 8px;
-  color: var(--el-text-color-primary);
+  color: var(--v3-sidebar-menu-active-text-color);
   line-height: 1;
   white-space: nowrap;
 }

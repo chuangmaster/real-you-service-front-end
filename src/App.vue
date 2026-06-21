@@ -14,7 +14,7 @@ const toggleLocale = () => {
     <!-- Navbar -->
     <nav class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30">
       <div class="max-w-container-max mx-auto px-margin-mobile h-16 flex items-center justify-between">
-        <router-link to="/" class="font-display-lg text-xl tracking-widest text-primary uppercase hover:opacity-80 transition-opacity">
+        <router-link to="/" class="brand-logo-nav hover:opacity-80 transition-opacity">
           REAL YOU
         </router-link>
         <div class="flex items-center gap-6">
@@ -37,7 +37,7 @@ const toggleLocale = () => {
     <!-- Footer -->
     <footer class="bg-charcoal text-white/60 py-12 border-t border-white/5 mt-auto">
       <div class="max-w-container-max mx-auto px-margin-mobile flex flex-col md:flex-row justify-between items-center gap-8">
-        <span class="font-display-lg text-lg tracking-widest text-primary-container">REAL YOU</span>
+        <span class="brand-logo-footer">REAL YOU</span>
         <div class="flex gap-8 font-label-caps text-[10px] tracking-widest uppercase">
           <a class="hover:text-primary-container transition-colors" href="#">{{ $t('footer.privacy') }}</a>
           <a class="hover:text-primary-container transition-colors" href="#">{{ $t('footer.terms') }}</a>
@@ -52,5 +52,25 @@ const toggleLocale = () => {
 </template>
 
 <style scoped>
-/* Scoped styles if any */
+.brand-logo-nav {
+  font-family: "AFuturaOrto", sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 5px;
+  color: var(--v3-sidebar-menu-active-text-color);
+  line-height: 1;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.brand-logo-footer {
+  font-family: "AFuturaOrto", sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 5px;
+  color: var(--v3-sidebar-menu-active-text-color);
+  line-height: 1;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
 </style>
