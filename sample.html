@@ -1,0 +1,608 @@
+<!doctype html>
+<html class="light" lang="en" style="">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>VERITAS | Luxury Authentication Report</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Playfair+Display:wght@500;600&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 300,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+      .luxury-blur {
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+      .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-variant": "#e5e2e2",
+              "primary-fixed-dim": "#e9c176",
+              "on-tertiary-fixed": "#201b0c",
+              "primary-container": "#c5a059",
+              "on-primary-fixed": "#261900",
+              "tertiary-container": "#ada58e",
+              "inverse-surface": "#303031",
+              "surface-container-lowest": "#ffffff",
+              "secondary-fixed-dim": "#c8c6c5",
+              secondary: "#5f5e5e",
+              "on-surface": "#1b1b1c",
+              "error-container": "#ffdad6",
+              "primary-fixed": "#ffdea5",
+              "on-tertiary": "#ffffff",
+              "authentic-emerald": "#2D4B3F",
+              "tertiary-fixed": "#ece2c9",
+              "surface-tint": "#775a19",
+              "outline-variant": "#d1c5b4",
+              "tertiary-fixed-dim": "#cfc6ae",
+              primary: "#775a19",
+              "on-primary-fixed-variant": "#5d4201",
+              "surface-container-highest": "#e5e2e2",
+              "surface-container-high": "#eae7e7",
+              surface: "#fcf9f9",
+              "on-background": "#1b1b1c",
+              tertiary: "#655e4b",
+              "on-error-container": "#93000a",
+              outline: "#7f7667",
+              "on-tertiary-container": "#403b29",
+              charcoal: "#1A1A1A",
+              "on-primary": "#ffffff",
+              "surface-container-low": "#f6f3f3",
+              background: "#fcf9f9",
+              "antique-gold": "#D7C8BB",
+              "inverse-on-surface": "#f3f0f0",
+              "on-secondary": "#ffffff",
+              "on-error": "#ffffff",
+              "on-secondary-fixed": "#1b1c1c",
+              "secondary-container": "#e4e2e1",
+              "silver-gray": "#94908D",
+              "on-primary-container": "#4e3700",
+              "on-surface-variant": "#4e4639",
+              "surface-container": "#f0eded",
+              error: "#ba1a1a",
+              "on-secondary-fixed-variant": "#474746",
+              "secondary-fixed": "#e4e2e1",
+              "on-secondary-container": "#656464",
+              "surface-bright": "#fcf9f9",
+              "surface-dim": "#dcd9d9",
+              "on-tertiary-fixed-variant": "#4c4634",
+              "inverse-primary": "#e9c176",
+            },
+            borderRadius: {
+              DEFAULT: "0.125rem",
+              lg: "0.25rem",
+              xl: "0.5rem",
+              full: "0.75rem",
+            },
+            spacing: {
+              gutter: "24px",
+              "margin-mobile": "20px",
+              "container-max": "1280px",
+              "margin-desktop": "64px",
+              base: "8px",
+            },
+            fontFamily: {
+              "label-caps": ["Inter"],
+              "body-lg": ["Inter"],
+              "display-lg-mobile": ["Playfair Display"],
+              "title-lg": ["Inter"],
+              "body-md": ["Inter"],
+              "headline-md": ["Playfair Display"],
+              "display-lg": ["Playfair Display"],
+              "headline-sm": ["Playfair Display"],
+              "data-mono": ["Inter"],
+            },
+            fontSize: {
+              "label-caps": [
+                "12px",
+                {
+                  lineHeight: "16px",
+                  letterSpacing: "0.1em",
+                  fontWeight: "700",
+                },
+              ],
+              "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+              "display-lg-mobile": [
+                "36px",
+                { lineHeight: "44px", fontWeight: "600" },
+              ],
+              "title-lg": [
+                "20px",
+                {
+                  lineHeight: "28px",
+                  letterSpacing: "0.01em",
+                  fontWeight: "600",
+                },
+              ],
+              "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+              "headline-md": [
+                "32px",
+                { lineHeight: "40px", fontWeight: "500" },
+              ],
+              "display-lg": [
+                "48px",
+                {
+                  lineHeight: "56px",
+                  letterSpacing: "-0.02em",
+                  fontWeight: "600",
+                },
+              ],
+              "headline-sm": [
+                "24px",
+                { lineHeight: "32px", fontWeight: "500" },
+              ],
+              "data-mono": [
+                "14px",
+                {
+                  lineHeight: "20px",
+                  letterSpacing: "0.05em",
+                  fontWeight: "500",
+                },
+              ],
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body class="bg-background text-on-background font-body-md overflow-x-hidden">
+    <nav
+      class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface/80 backdrop-blur-md border-b border-outline-variant/30"
+    >
+      <div
+        class="max-w-container-max mx-auto px-margin-mobile h-16 flex items-center justify-between"
+      >
+        <span
+          class="font-display-lg text-xl tracking-widest text-primary uppercase"
+          >REAL YOU</span
+        >
+        <button class="material-symbols-outlined text-secondary">menu</button>
+      </div>
+    </nav>
+    <main class="pt-20">
+      <!-- Hero Section: Authentication Status -->
+      <section
+        class="py-16 md:py-24 flex flex-col items-center text-center px-margin-mobile"
+      >
+        <div class="mb-4"></div>
+
+        <div class="relative group mb-12">
+          <div
+            class="absolute -inset-1 bg-gradient-to-r from-primary-container/20 to-primary/20 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000"
+          ></div>
+        </div>
+        <div class="flex flex-col items-center gap-2">
+          <p class="font-data-mono text-data-mono text-secondary">
+            REAL YOU PRODUCT NUMBER
+          </p>
+          <p
+            class="font-headline-sm text-headline-sm tracking-[0.1em] text-on-surface"
+          >
+            <span
+              style="
+                font-family: Inter;
+                font-size: 20px;
+                font-weight: 600;
+                letter-spacing: 0.2px;
+                text-align: start;
+              "
+              class=""
+              >V-8892341</span
+            >
+          </p>
+          <div class="h-[1px] w-24 bg-primary-container mt-4"></div>
+        </div>
+      </section>
+      <!-- Main Cover Display -->
+      <section
+        class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop mb-24"
+      >
+        <div
+          class="relative overflow-hidden aspect-[4/5] md:aspect-[21/9] bg-surface-container"
+        >
+          <img
+            alt="Cover Image - Chanel Classic Flap Bag"
+            class="w-full h-full object-cover"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxmb-qJbmyDPYMczGFq9xHRAkpGwtrj5AHAcSg7eiVAlw3X-TVT5OdzcE8zzaFZ3RgzTxsYNG9WS8RyMOupe9O59HJFZeuhh7aA3c6depASBPhl5xReolD9qzLjjiROuP1QQaeus-_pDjXutLUSl47-MC0NXDLdyx5qY5LzLypGpC2V5cUzR25JIMnecDfV8CaltuEFBovs-P6uAqrtu1k7dlvBCMKA_4e-fPKgyhHMLO5-O2Au1nAvn51hmJ4BVXziMPMQ0e4WjQ"
+          />
+          <div
+            class="absolute bottom-8 left-8 bg-charcoal/40 backdrop-blur-md px-6 py-3 border border-white/20"
+          >
+            <span class="font-label-caps text-label-caps text-white"
+              >IDENTIFIED ASSET</span
+            >
+          </div>
+        </div>
+      </section>
+      <!-- Product Information & Accessories -->
+      <section
+        class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop grid grid-cols-1 lg:grid-cols-2 gap-20 mb-32"
+      >
+        <!-- Details -->
+        <div>
+          <h2
+            class="font-headline-sm text-headline-sm mb-12 border-b border-antique-gold/30 pb-4"
+          >
+            Product Specifications
+          </h2>
+          <div class="space-y-0">
+            <div
+              class="flex justify-between py-6 border-b border-outline-variant/20 items-center"
+            >
+              <span
+                class="font-label-caps text-label-caps text-secondary uppercase tracking-wider"
+                >Brand</span
+              >
+              <span class="font-title-lg text-title-lg text-on-surface"
+                >Chanel</span
+              >
+            </div>
+            <div
+              class="flex justify-between py-6 border-b border-outline-variant/20 items-center"
+            >
+              <span
+                class="font-label-caps text-label-caps text-secondary uppercase tracking-wider"
+                >Style</span
+              >
+              <span class="font-title-lg text-title-lg text-on-surface"
+                >Classic Flap Bag</span
+              >
+            </div>
+
+            <div
+              class="flex justify-between py-6 border-b border-outline-variant/20 items-center"
+            >
+              <span
+                class="font-label-caps text-label-caps text-secondary uppercase tracking-wider"
+                >Serial ID</span
+              >
+              <span class="font-data-mono text-title-lg text-on-surface"
+                >32298451</span
+              >
+            </div>
+          </div>
+        </div>
+        <!-- Accessories -->
+        <div>
+          <h2
+            class="font-headline-sm text-headline-sm mb-12 border-b border-antique-gold/30 pb-4"
+          >
+            Accompanying Accessories
+          </h2>
+          <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 gap-4">
+            <!-- 13 Standard Accessories -->
+            <div
+              class="bg-surface-container-low p-4 flex flex-col items-center gap-2 text-center border border-transparent"
+            >
+              <span class="material-symbols-outlined text-primary text-[24px]"
+                >inventory_2</span
+              >
+              <span
+                class="font-label-caps text-[10px] text-on-surface uppercase"
+                >Box</span
+              >
+            </div>
+            <div
+              class="bg-surface-container-low p-4 flex flex-col items-center gap-2 text-center border border-transparent"
+            >
+              <span class="material-symbols-outlined text-primary text-[24px]"
+                >shopping_bag</span
+              >
+              <span
+                class="font-label-caps text-[10px] text-on-surface uppercase"
+                >Dust Bag</span
+              >
+            </div>
+            <div
+              class="bg-surface-container-low p-4 flex flex-col items-center gap-2 text-center border border-transparent"
+            >
+              <span class="material-symbols-outlined text-primary text-[24px]"
+                >receipt_long</span
+              >
+              <span
+                class="font-label-caps text-[10px] text-on-surface uppercase"
+                >Purchase Proof</span
+              >
+            </div>
+            <div
+              class="bg-surface-container-low p-4 flex flex-col items-center gap-2 text-center border border-transparent"
+            >
+              <span class="material-symbols-outlined text-primary text-[24px]"
+                >shopping_cart</span
+              >
+              <span
+                class="font-label-caps text-[10px] text-on-surface uppercase"
+                >Shopping Bag</span
+              >
+            </div>
+            <div
+              class="bg-surface-container-low p-4 flex flex-col items-center gap-2 text-center border border-transparent opacity-30"
+            >
+              <span class="material-symbols-outlined text-primary text-[24px]"
+                >link</span
+              >
+              <span
+                class="font-label-caps text-[10px] text-on-surface uppercase"
+                >Shoulder Strap</span
+              >
+            </div>
+            <div
+              class="bg-surface-container-low p-4 flex flex-col items-center gap-2 text-center border border-transparent opacity-30"
+            >
+              <span class="material-symbols-outlined text-primary text-[24px]"
+                >texture</span
+              >
+              <span
+                class="font-label-caps text-[10px] text-on-surface uppercase"
+                >Felt</span
+              >
+            </div>
+            <div
+              class="bg-surface-container-low p-4 flex flex-col items-center gap-2 text-center border border-transparent opacity-30"
+            >
+              <span class="material-symbols-outlined text-primary text-[24px]"
+                >chair</span
+              >
+              <span
+                class="font-label-caps text-[10px] text-on-surface uppercase"
+                >Pillow</span
+              >
+            </div>
+            <div
+              class="bg-surface-container-low p-4 flex flex-col items-center gap-2 text-center border border-transparent"
+            >
+              <span class="material-symbols-outlined text-primary text-[24px]"
+                >credit_card</span
+              >
+              <span
+                class="font-label-caps text-[10px] text-on-surface uppercase"
+                >Card</span
+              >
+            </div>
+            <div
+              class="bg-surface-container-low p-4 flex flex-col items-center gap-2 text-center border border-transparent opacity-30"
+            >
+              <span class="material-symbols-outlined text-primary text-[24px]"
+                >lock</span
+              >
+              <span
+                class="font-label-caps text-[10px] text-on-surface uppercase"
+                >Lock/Key</span
+              >
+            </div>
+            <div
+              class="bg-surface-container-low p-4 flex flex-col items-center gap-2 text-center border border-transparent opacity-30"
+            >
+              <span class="material-symbols-outlined text-primary text-[24px]"
+                >bookmark</span
+              >
+              <span
+                class="font-label-caps text-[10px] text-on-surface uppercase"
+                >Ribbon</span
+              >
+            </div>
+            <div
+              class="bg-surface-container-low p-4 flex flex-col items-center gap-2 text-center border border-transparent"
+            >
+              <span class="material-symbols-outlined text-primary text-[24px]"
+                >badge</span
+              >
+              <span
+                class="font-label-caps text-[10px] text-on-surface uppercase"
+                >Brand Card</span
+              >
+            </div>
+            <div
+              class="bg-surface-container-low p-4 flex flex-col items-center gap-2 text-center border border-transparent"
+            >
+              <span class="material-symbols-outlined text-primary text-[24px]"
+                >verified_user</span
+              >
+              <span
+                class="font-label-caps text-[10px] text-on-surface uppercase"
+                >Certificate</span
+              >
+            </div>
+            <div
+              class="bg-surface-container-low p-4 flex flex-col items-center gap-2 text-center border border-transparent opacity-30"
+            >
+              <span class="material-symbols-outlined text-primary text-[24px]"
+                >umbrella</span
+              >
+              <span
+                class="font-label-caps text-[10px] text-on-surface uppercase"
+                >Raincoat</span
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- CTA Section -->
+
+      <!-- Inspection Gallery Section -->
+      <section class="py-24 bg-surface-container-lowest">
+        <div
+          class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop"
+        >
+          <div
+            class="flex flex-col md:flex-row md:items-end justify-between mb-12 border-b border-outline-variant/30 pb-6"
+          >
+            <div>
+              <span
+                class="font-label-caps text-primary tracking-widest uppercase text-xs"
+                >商品細節圖</span
+              >
+              <h2 class="font-headline-md text-on-surface mt-2">商品細節圖</h2>
+            </div>
+          </div>
+          <!-- Gallery Grid -->
+          <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <!-- Thumbnail 1 -->
+            <div
+              class="aspect-square bg-surface-container overflow-hidden group relative cursor-pointer border border-outline-variant/20"
+            >
+              <img
+                alt="Detail 1"
+                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCg2zoH53eiADSHF0iNutf0dsOaqN39kkGyzCrLmQERE26kw5TzKUpEJwZH67lQnUtdaebg_ORWhxcO4p2g4Y3NF5gDIiLsvwpAlfmeXLaBLWcjPaabrme2qoO5OTKaWvvPYH3Xtb7nTR8WvufkDo1jP6Cz_ZU8LUQ-t2GcIpJr-9xsKCyiz2E7fOAq3MZhxrlfu5sSR6KPEpkYdujCDW5cFTeH5P3bHWiI38gESNpjkGuUPeRp10CdWU83bkOhiLJCa40rDPfhLSY"
+              />
+              <div
+                class="absolute inset-0 bg-charcoal/0 group-hover:bg-charcoal/20 transition-colors duration-300 flex items-center justify-center"
+              >
+                <span
+                  class="material-symbols-outlined text-white opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 transition-all"
+                  >zoom_in</span
+                >
+              </div>
+            </div>
+            <!-- Thumbnail 2 -->
+            <div
+              class="aspect-square bg-surface-container overflow-hidden group relative cursor-pointer border border-outline-variant/20"
+            >
+              <img
+                alt="Detail 2"
+                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxmb-qJbmyDPYMczGFq9xHRAkpGwtrj5AHAcSg7eiVAlw3X-TVT5OdzcE8zzaFZ3RgzTxsYNG9WS8RyMOupe9O59HJFZeuhh7aA3c6depASBPhl5xReolD9qzLjjiROuP1QQaeus-_pDjXutLUSl47-MC0NXDLdyx5qY5LzLypGpC2V5cUzR25JIMnecDfV8CaltuEFBovs-P6uAqrtu1k7dlvBCMKA_4e-fPKgyhHMLO5-O2Au1nAvn51hmJ4BVXziMPMQ0e4WjQ"
+              />
+              <div
+                class="absolute inset-0 bg-charcoal/0 group-hover:bg-charcoal/20 transition-colors duration-300 flex items-center justify-center"
+              >
+                <span
+                  class="material-symbols-outlined text-white opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 transition-all"
+                  >zoom_in</span
+                >
+              </div>
+            </div>
+            <!-- Placeholder Thumbnails to simulate the grid from SCREEN_2 -->
+            <div
+              class="aspect-square bg-surface-container-low border border-outline-variant/10 flex items-center justify-center"
+            >
+              <span class="material-symbols-outlined text-outline-variant/40"
+                >image</span
+              >
+            </div>
+            <div
+              class="aspect-square bg-surface-container-low border border-outline-variant/10 flex items-center justify-center"
+            >
+              <span class="material-symbols-outlined text-outline-variant/40"
+                >image</span
+              >
+            </div>
+            <div
+              class="aspect-square bg-surface-container-low border border-outline-variant/10 flex items-center justify-center"
+            >
+              <span class="material-symbols-outlined text-outline-variant/40"
+                >image</span
+              >
+            </div>
+            <div
+              class="aspect-square bg-surface-container-low border border-outline-variant/10 flex items-center justify-center"
+            >
+              <span class="material-symbols-outlined text-outline-variant/40"
+                >image</span
+              >
+            </div>
+            <div
+              class="aspect-square bg-surface-container-low border border-outline-variant/10 flex items-center justify-center"
+            >
+              <span class="material-symbols-outlined text-outline-variant/40"
+                >image</span
+              >
+            </div>
+            <div
+              class="aspect-square bg-surface-container-low border border-outline-variant/10 flex items-center justify-center"
+            >
+              <span class="material-symbols-outlined text-outline-variant/40"
+                >image</span
+              >
+            </div>
+            <div
+              class="aspect-square bg-surface-container-low border border-outline-variant/10 flex items-center justify-center"
+            >
+              <span class="material-symbols-outlined text-outline-variant/40"
+                >image</span
+              >
+            </div>
+            <div
+              class="aspect-square bg-surface-container-low border border-outline-variant/10 flex items-center justify-center"
+            >
+              <span class="material-symbols-outlined text-outline-variant/40"
+                >image</span
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="bg-charcoal py-24 text-center">
+        <div class="max-w-container-max mx-auto px-margin-mobile">
+          <h2
+            class="font-display-lg text-display-lg-mobile md:text-display-lg text-white mb-12"
+          >
+            Secure your digital asset
+          </h2>
+          <div class="flex flex-col md:flex-row gap-6 justify-center">
+            <button
+              class="bg-primary text-white px-12 py-4 font-label-caps text-label-caps hover:bg-primary-container transition-colors duration-300"
+            >
+              DOWNLOAD CERTIFICATE PDF
+            </button>
+            <button
+              class="border border-white/30 text-white px-12 py-4 font-label-caps text-label-caps hover:bg-white/10 transition-colors duration-300"
+            >
+              ADD TO DIGITAL VAULT
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer class="bg-charcoal text-white/60 py-12 border-t border-white/5">
+      <div
+        class="max-w-container-max mx-auto px-margin-mobile flex flex-col md:flex-row justify-between items-center gap-8"
+      >
+        <span
+          class="font-display-lg text-lg tracking-widest text-primary-container"
+          >VERITAS</span
+        >
+        <div
+          class="flex gap-8 font-label-caps text-[10px] tracking-widest uppercase"
+        >
+          <a class="hover:text-primary-container transition-colors" href="#"
+            >Privacy Policy</a
+          >
+          <a class="hover:text-primary-container transition-colors" href="#"
+            >Terms of Service</a
+          >
+          <a class="hover:text-primary-container transition-colors" href="#"
+            >Support</a
+          >
+        </div>
+        <p class="font-data-mono text-[10px]">
+          © 2024 VERITAS LUXURY AUTHENTICATION. ALL RIGHTS RESERVED.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
