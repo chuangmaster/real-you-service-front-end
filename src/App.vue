@@ -37,7 +37,7 @@ const toggleLocale = () => {
     <!-- Footer -->
     <footer class="bg-charcoal text-white/60 py-12 border-t border-white/5 mt-auto">
       <div class="max-w-container-max mx-auto px-margin-mobile flex flex-col md:flex-row justify-between items-center gap-8">
-        <span class="font-display-lg text-lg tracking-widest text-primary-container">VERITAS</span>
+        <span class="font-display-lg text-lg tracking-widest text-primary-container">REAL YOU</span>
         <div class="flex gap-8 font-label-caps text-[10px] tracking-widest uppercase">
           <a class="hover:text-primary-container transition-colors" href="#">{{ $t('footer.privacy') }}</a>
           <a class="hover:text-primary-container transition-colors" href="#">{{ $t('footer.terms') }}</a>

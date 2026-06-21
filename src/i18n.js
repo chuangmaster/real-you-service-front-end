@@ -7,7 +7,7 @@ const messages = {
     },
     home: {
       subtitle: 'Luxury Authentication Report Lookup',
-      title: 'VERITAS CERTIFICATE',
+      title: 'REAL YOU CERTIFICATE',
       description: 'Enter the 36-character product identification ID to view the certificate of authenticity, specifications, and inspection gallery.',
       idLabel: 'Product ID (UUID)',
       idPlaceholder: 'e.g. 875efd5f-21f9-4940-a26b-b463396e56d2',
@@ -56,7 +56,7 @@ const messages = {
       privacy: 'Privacy Policy',
       terms: 'Terms of Service',
       support: 'Support',
-      copyright: '© 2026 VERITAS LUXURY AUTHENTICATION. ALL RIGHTS RESERVED.'
+      copyright: '© 2026 REAL YOU LUXURY AUTHENTICATION. ALL RIGHTS RESERVED.'
     }
   },
   'zh-TW': {
@@ -65,7 +65,7 @@ const messages = {
     },
     home: {
       subtitle: '奢侈品鑑定報告查詢',
-      title: 'VERITAS 鑑定證書',
+      title: 'REAL YOU 鑑定證書',
       description: '請輸入 36 碼商品識別 ID，即可查看商品真品證明書、詳細規格及細節檢驗圖庫。',
       idLabel: '商品 ID (UUID)',
       idPlaceholder: '例如：875efd5f-21f9-4940-a26b-b463396e56d2',
@@ -114,7 +114,7 @@ const messages = {
       privacy: '隱私權政策',
       terms: '服務條款',
       support: '客戶支援',
-      copyright: '© 2026 VERITAS 奢華鑑定。版權所有。'
+      copyright: '© 2026 REAL YOU 奢華鑑定。版權所有。'
     }
   }
 }
