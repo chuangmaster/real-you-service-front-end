@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import InventoryDetailView from '../views/InventoryDetailView.vue'
+import ProductDetailView from '../views/ProductDetailView.vue'
 
 const routes = [
   {
@@ -9,9 +9,9 @@ const routes = [
     component: HomeView
   },
   {
-    path: '/inventory/:id',
-    name: 'inventory-detail',
-    component: InventoryDetailView
+    path: '/product/:id',
+    name: 'product-detail',
+    component: ProductDetailView
   },
   {
     path: '/:pathMatch(.*)*',
