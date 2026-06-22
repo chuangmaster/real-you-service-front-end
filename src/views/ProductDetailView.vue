@@ -1,11 +1,10 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 
 const route = useRoute()
-const router = useRouter()
 const { t } = useI18n()
 
 const loading = ref(true)
@@ -32,7 +31,7 @@ const fetchProductDetails = async (id) => {
       throw new Error('Invalid API response format')
     }
   } catch (err) {
-    console.error('Error fetching inventory item:', err)
+    console.error('Error fetching product details:', err)
     if (err.response && err.response.status === 404) {
       error.value = t('detail.error404')
     } else {
