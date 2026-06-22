@@ -24,7 +24,7 @@ const handleSearch = () => {
     return
   }
   
-  router.push({ name: 'inventory-detail', params: { id: cleanId } })
+  router.push({ name: 'product-detail', params: { id: cleanId } })
 }
 </script>
 
