@@ -9,6 +9,11 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:5176',
         changeOrigin: true,
+      },
+      '^/product/.+/share$': {
+        target: 'http://localhost:5176',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/product\/(.+)\/share$/, '/api/public/inventory/$1/share'),
       }
     }
   }
