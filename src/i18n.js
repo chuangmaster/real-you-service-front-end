@@ -24,18 +24,23 @@ const messages = {
       errorServer: 'Unable to establish secure connection to the authentication server. Please try again later.',
       returnBtn: 'RETURN TO SEARCH',
       productNumber: 'REAL YOU PRODUCT NUMBER',
-      identifiedAsset: 'IDENTIFIED ASSET',
+      authenticBadge: 'AUTHENTIC',
       specifications: 'Product Specifications',
       brand: 'Brand',
       style: 'Style',
       serialId: 'Serial ID',
-      securityCode: 'Security Code',
       accessories: 'Accompanying Accessories',
-      gallerySub: 'Product Detail Photos',
-      galleryTitle: 'Product Inspection Gallery',
-      secureTitle: 'Secure your digital asset',
-      downloadPdf: 'DOWNLOAD CERTIFICATE PDF',
-      addToVault: 'ADD TO DIGITAL VAULT',
+      galleryHeading: 'Product Photos',
+      tabProduct: 'Product Photos',
+      tabAppraisal: 'Appraisal Detail',
+      productImageAlt: 'Studio photo {n}',
+      appraisalImageAlt: 'Condition record photo {n}',
+      ctaTitle: 'Get Your Certificate of Authentication',
+      ctaDesc: 'Download the full certificate PDF to verify the product serial number and appraisal results anytime.',
+      downloadPdf: 'DOWNLOAD CERTIFICATE',
+      generatingPdf: 'GENERATING PDF...',
+      certificateCardTitle: 'Certificate of Authentication',
+      downloadCard: 'DOWNLOAD CARD',
       accList: {
         box: 'Box',
         dustBag: 'Dust Bag',
@@ -55,8 +60,8 @@ const messages = {
     footer: {
       privacy: 'Privacy Policy',
       terms: 'Terms of Service',
-      support: 'Support',
-      copyright: '© 2026 REAL YOU LUXURY AUTHENTICATION. ALL RIGHTS RESERVED.'
+      appraisal: 'Authentication Service',
+      copyright: '© 2026 REAL YOU. ALL RIGHTS RESERVED.'
     }
   },
   'zh-TW': {
@@ -82,18 +87,23 @@ const messages = {
       errorServer: '無法與鑑定伺服器建立安全連接。請稍後再試。',
       returnBtn: '返回查詢',
       productNumber: 'REAL YOU 商品編號',
-      identifiedAsset: '已識別資產',
+      authenticBadge: '鑑定為真',
       specifications: '商品詳細規格',
       brand: '品牌',
       style: '款式',
       serialId: '序號',
-      securityCode: '防偽安全碼',
       accessories: '隨附配件',
-      gallerySub: '商品細節圖',
-      galleryTitle: '商品細節圖庫',
-      secureTitle: '保障您的數位資產',
-      downloadPdf: '下載證書 PDF',
-      addToVault: '新增至數位保險箱',
+      galleryHeading: '商品照片',
+      tabProduct: '商品圖',
+      tabAppraisal: '鑑定細節',
+      productImageAlt: '商品實品照 {n}',
+      appraisalImageAlt: '商品現況紀錄照 {n}',
+      ctaTitle: '取得您的鑑定證書',
+      ctaDesc: '下載完整鑑定證書 PDF，隨時核對商品序號與鑑定結果。',
+      downloadPdf: '下載保證書',
+      generatingPdf: '產生 PDF 中...',
+      certificateCardTitle: '鑑定結果證書',
+      downloadCard: '下載保證書小卡',
       accList: {
         box: '包裝盒',
         dustBag: '防塵袋',
@@ -113,8 +123,8 @@ const messages = {
     footer: {
       privacy: '隱私權政策',
       terms: '服務條款',
-      support: '客戶支援',
-      copyright: '© 2026 REAL YOU 奢華鑑定。版權所有。'
+      appraisal: '精品鑑定',
+      copyright: '© 2026 REAL YOU。版權所有。'
     }
   }
 }

@@ -22,7 +22,7 @@ export default {
         "error-container": "#ffdad6",
         "primary-fixed": "#ffdea5",
         "on-tertiary": "#ffffff",
-        "authentic-emerald": "#2D4B3F",
+        "authentic-emerald": "#06C755",
         "tertiary-fixed": "#ece2c9",
         "surface-tint": "#775a19",
         "outline-variant": "#d1c5b4",
