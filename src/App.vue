@@ -39,9 +39,24 @@ const toggleLocale = () => {
       <div class="max-w-container-max mx-auto px-margin-mobile flex flex-col md:flex-row justify-between items-center gap-8">
         <span class="brand-logo-footer">REAL YOU</span>
         <div class="flex gap-8 font-label-caps text-[10px] tracking-widest uppercase">
-          <a class="hover:text-primary-container transition-colors" href="#">{{ $t('footer.privacy') }}</a>
-          <a class="hover:text-primary-container transition-colors" href="#">{{ $t('footer.terms') }}</a>
-          <a class="hover:text-primary-container transition-colors" href="#">{{ $t('footer.support') }}</a>
+          <a
+            class="hover:text-primary-container transition-colors"
+            href="https://realyou.com.tw/blogs/精品服務/realyou-safe_shopping"
+            target="_blank"
+            rel="noopener noreferrer"
+          >{{ $t('footer.privacy') }}</a>
+          <a
+            class="hover:text-primary-container transition-colors"
+            href="https://realyou.com.tw/pages/線上收購服務-免到店-快速鑑定報價24hr撥款"
+            target="_blank"
+            rel="noopener noreferrer"
+          >{{ $t('footer.terms') }}</a>
+          <a
+            class="hover:text-primary-container transition-colors"
+            href="https://realyou.com.tw/blogs/精品服務/authentication"
+            target="_blank"
+            rel="noopener noreferrer"
+          >{{ $t('footer.appraisal') }}</a>
         </div>
         <p class="font-data-mono text-[10px]">
           {{ $t('footer.copyright') }}
