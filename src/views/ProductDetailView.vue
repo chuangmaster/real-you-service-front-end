@@ -97,14 +97,17 @@ const fetchProductDetails = async (id: string | string[]) => {
   }
 }
 
-// Compute the cover image
-const coverImage = computed(() => {
-  if (!item.value || !item.value.images || item.value.images.length === 0) {
-    return 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?q=80&w=1200&auto=format&fit=crop' // Luxury placeholder
-  }
-  const cover = item.value.images.find(img => img.isCover)
-  return cover ? cover.imageUrl : item.value.images[0].imageUrl
+// The image object selected as the cover photo (isCover flag, falling back
+// to the first image) so other galleries can exclude it by id
+const coverImageObject = computed(() => {
+  if (!item.value || !item.value.images || item.value.images.length === 0) return null
+  return item.value.images.find(img => img.isCover) || item.value.images[0]
 })
+
+// Compute the cover image URL, falling back to a placeholder when there are no images
+const coverImage = computed(() =>
+  coverImageObject.value?.imageUrl || 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?q=80&w=1200&auto=format&fit=crop' // Luxury placeholder
+)
 
 // Sort images by upload order
 const sortedImages = computed(() => {
@@ -124,13 +127,16 @@ const appraisalImages = computed(() =>
 )
 
 // Appraisal images mapped for the carousel, with i18n alt text baked in so
-// the carousel component itself stays presentational/i18n-agnostic
+// the carousel component itself stays presentational/i18n-agnostic. The
+// cover photo is excluded here so it isn't shown twice on the page.
 const appraisalCarouselImages = computed(() =>
-  appraisalImages.value.map((img, index) => ({
-    id: img.id,
-    imageUrl: img.imageUrl,
-    alt: t('detail.appraisalImageAlt', { n: index + 1 })
-  }))
+  appraisalImages.value
+    .filter(img => img.id !== coverImageObject.value?.id)
+    .map((img, index) => ({
+      id: img.id,
+      imageUrl: img.imageUrl,
+      alt: t('detail.appraisalImageAlt', { n: index + 1 })
+    }))
 )
 
 // Accessories list (mock metadata since not provided by standard public API)
