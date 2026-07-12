@@ -43,3 +43,6 @@ Tailwind (`tailwind.config.js`) is extended with a full Material-Design-3-style 
 
 ### Planning docs
 `docs/superpowers/` contains dated spec/plan markdown files (one spec + one plan per feature, e.g. `2026-07-05-product-share-route-design.md` / `2026-07-06-product-share-route.md`) written before implementing non-trivial changes. Check here for the reasoning behind existing infra/proxy decisions before re-deriving them from scratch.
+
+## Language
+All documentation and comments are in Tranditional Chinese, but the code itself is in English. Please do not mix languages in code identifiers or comments.

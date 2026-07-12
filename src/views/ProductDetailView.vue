@@ -6,6 +6,7 @@ import axios from 'axios'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
 import QRCode from 'qrcode'
+import AppraisalCarousel from '../components/AppraisalCarousel.vue'
 
 interface InventoryImage {
   id: string | number
@@ -120,6 +121,16 @@ const productImages = computed(() =>
 // Appraisal images: explicitly tagged by the backend imageType field
 const appraisalImages = computed(() =>
   sortedImages.value.filter(img => img.imageType === 'APPRAISAL')
+)
+
+// Appraisal images mapped for the carousel, with i18n alt text baked in so
+// the carousel component itself stays presentational/i18n-agnostic
+const appraisalCarouselImages = computed(() =>
+  appraisalImages.value.map((img, index) => ({
+    id: img.id,
+    imageUrl: img.imageUrl,
+    alt: t('detail.appraisalImageAlt', { n: index + 1 })
+  }))
 )
 
 // Accessories list (mock metadata since not provided by standard public API)
@@ -376,12 +387,21 @@ watch(() => route.params.id, (newId) => {
 
         <!-- Cover Image & Specifications -->
         <section class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop grid grid-cols-1 lg:grid-cols-2 gap-20 mb-32">
-          <!-- Cover Image -->
-          <div class="relative overflow-hidden aspect-[4/5] bg-surface-container border border-outline-variant/20 shadow-sm group">
-            <img
-              :alt="`${item.brandName || 'Brand'} - ${item.styleName || 'Style'}`"
-              class="w-full h-full object-contain transition-transform duration-[2000ms] group-hover:scale-105"
-              :src="coverImage"
+          <!-- Cover Image Column -->
+          <div>
+            <div class="relative overflow-hidden aspect-[4/5] w-3/4 mx-auto bg-surface-container border border-outline-variant/20 shadow-sm group">
+              <img
+                :alt="`${item.brandName || 'Brand'} - ${item.styleName || 'Style'}`"
+                class="w-full h-full object-contain transition-transform duration-[2000ms] group-hover:scale-105"
+                :src="coverImage"
+              />
+            </div>
+
+            <AppraisalCarousel
+              v-if="appraisalCarouselImages.length > 0"
+              :images="appraisalCarouselImages"
+              class="mt-6"
+              @select="openLightbox"
             />
           </div>
 
@@ -411,48 +431,22 @@ watch(() => route.params.id, (newId) => {
 
         <!-- Accessories -->
         <section class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop mb-32">
-          <!-- Appraisal Detail Images -->
-          <h2 class="font-headline-sm text-[16px] mb-8 pb-4 border-b border-antique-gold/30">
-            {{ $t('detail.tabAppraisal') }}
+          <h2 class="font-headline-sm text-[16px] mb-12 border-b border-antique-gold/30 pb-4">
+            {{ $t('detail.accessories') }}
           </h2>
-          <div class="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-2">
+          <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-4">
             <div
-              v-for="(img, index) in appraisalImages"
-              :key="img.id"
-              @click="openLightbox(img.imageUrl)"
-              class="aspect-square bg-surface-container overflow-hidden group relative cursor-pointer border border-outline-variant/20 shadow-sm"
+              v-for="acc in accessories"
+              :key="acc.name"
+              class="bg-surface-container-low p-4 flex flex-col items-center gap-2 text-center border border-transparent transition-all duration-300 hover:bg-surface-container-high"
+              :class="{'opacity-30': !acc.present}"
             >
-              <img
-                :alt="$t('detail.appraisalImageAlt', { n: index + 1 })"
-                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                :src="img.imageUrl"
-              />
-              <div class="absolute inset-0 bg-charcoal/0 group-hover:bg-charcoal/20 transition-colors duration-300 flex items-center justify-center">
-                <span class="material-symbols-outlined text-white opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 transition-all text-[20px]">
-                  zoom_in
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div class="mt-16">
-            <h2 class="font-headline-sm text-[16px] mb-12 border-b border-antique-gold/30 pb-4">
-              {{ $t('detail.accessories') }}
-            </h2>
-            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-4">
-              <div
-                v-for="acc in accessories"
-                :key="acc.name"
-                class="bg-surface-container-low p-4 flex flex-col items-center gap-2 text-center border border-transparent transition-all duration-300 hover:bg-surface-container-high"
-                :class="{'opacity-30': !acc.present}"
-              >
-                <span class="material-symbols-outlined text-primary text-[24px]">
-                  {{ acc.icon }}
-                </span>
-                <span class="font-label-caps text-[10px] text-on-surface uppercase tracking-tight block">
-                  {{ acc.name }}
-                </span>
-              </div>
+              <span class="material-symbols-outlined text-primary text-[24px]">
+                {{ acc.icon }}
+              </span>
+              <span class="font-label-caps text-[10px] text-on-surface uppercase tracking-tight block">
+                {{ acc.name }}
+              </span>
             </div>
           </div>
         </section>
