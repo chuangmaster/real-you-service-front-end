@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // Print banner component for certificates and order sheets
 </script>
 

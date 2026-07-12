@@ -25,6 +25,7 @@ const messages = {
       returnBtn: 'RETURN TO SEARCH',
       productNumber: 'REAL YOU PRODUCT NUMBER',
       authenticBadge: 'AUTHENTIC',
+      authenticDesc: 'This product has undergone comprehensive inspection and cross-validation by the REAL YOU professional authentication team. The evaluation is based on multiple criteria, including brand craftsmanship, material characteristics, hardware, engravings, stitching, leather texture, and overall consistency. Following our standard acquisition and authentication procedures, this item has been verified to meet the standards of authenticity. This authentication result is a professional assessment based strictly on the actual condition of the product at the time of inspection.',
       specifications: 'Product Specifications',
       brand: 'Brand',
       style: 'Style',
@@ -41,6 +42,7 @@ const messages = {
       generatingPdf: 'GENERATING PDF...',
       certificateCardTitle: 'Certificate of Authentication',
       downloadCard: 'DOWNLOAD CARD',
+      scanToVerify: 'Scan to Verify',
       accList: {
         box: 'Box',
         dustBag: 'Dust Bag',
@@ -86,9 +88,10 @@ const messages = {
       error404: '找不到所請求的商品驗證報告。請檢查 ID 後再試一次。',
       errorServer: '無法與鑑定伺服器建立安全連接。請稍後再試。',
       returnBtn: '返回查詢',
-      productNumber: 'REAL YOU 商品編號',
+      productNumber: '證書編號',
       authenticBadge: '鑑定為真',
-      specifications: '商品詳細規格',
+      authenticDesc: '本商品由REAL YOU專業鑑定團隊依據品牌製作工藝、材質特徵、五金、刻印、車縫、皮革紋理及整體一致性等多項指標進行全面檢視與交叉驗證，經標準收購暨鑑定程序後，符合正品標準。該鑑定結果判斷係基於商品於鑑定當下之實際狀態之專業判定。',
+      specifications: '商品明細',
       brand: '品牌',
       style: '款式',
       serialId: '序號',
@@ -102,8 +105,9 @@ const messages = {
       ctaDesc: '下載完整鑑定證書 PDF，隨時核對商品序號與鑑定結果。',
       downloadPdf: '下載保證書',
       generatingPdf: '產生 PDF 中...',
-      certificateCardTitle: '鑑定結果證書',
+      certificateCardTitle: '鑑定證書',
       downloadCard: '下載保證書小卡',
+      scanToVerify: '掃描查看詳情',
       accList: {
         box: '包裝盒',
         dustBag: '防塵袋',
@@ -121,8 +125,8 @@ const messages = {
       }
     },
     footer: {
-      privacy: '隱私權政策',
-      terms: '服務條款',
+      privacy: '精品安心購保證',
+      terms: '線上收購服務',
       appraisal: '精品鑑定',
       copyright: '© 2026 REAL YOU。版權所有。'
     }

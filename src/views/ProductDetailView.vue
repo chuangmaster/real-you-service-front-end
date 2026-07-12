@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -6,6 +6,23 @@ import axios from 'axios'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
 import QRCode from 'qrcode'
+
+interface InventoryImage {
+  id: string | number
+  imageUrl: string
+  imageType?: string
+  uploadOrder?: number
+  isCover?: boolean
+}
+
+interface InventoryItem {
+  id?: string
+  inventoryNumber?: string
+  brandName?: string
+  styleName?: string
+  serialId?: string
+  images?: InventoryImage[]
+}
 
 const route = useRoute()
 const { t, locale } = useI18n()
@@ -16,7 +33,7 @@ const toggleLocale = () => {
 
 const loading = ref(true)
 const error = ref('')
-const item = ref(null)
+const item = ref<InventoryItem | null>(null)
 
 // Lightbox state
 const lightboxOpen = ref(false)
@@ -33,16 +50,31 @@ const ZOOM_STEP = 0.5
 
 // Certificate card modal state
 const certificateModalOpen = ref(false)
-const cardRef = ref(null)
+const cardRef = ref<HTMLElement | null>(null)
+const cardImageRef = ref<HTMLImageElement | null>(null)
+const badgeRef = ref<HTMLElement | null>(null)
 const qrCodeDataUrl = ref('')
 const cardDownloading = ref(false)
 
-const fetchProductDetails = async (id) => {
+// Inline remote images as data URLs so html2canvas can capture them even when
+// the image host doesn't send CORS headers (cross-origin images otherwise
+// render blank in the exported canvas without throwing an error)
+const toDataUrl = (url: string): Promise<string> =>
+  fetch(url, { mode: 'cors' })
+    .then((res) => res.blob())
+    .then((blob) => new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    }))
+
+const fetchProductDetails = async (id: string | string[]) => {
   loading.value = true
   error.value = ''
   try {
     const response = await axios.get(`/api/public/inventory/${id}`)
-    
+
     // Check if the response follows the standard API wrapper model
     if (response.data && response.data.success) {
       item.value = response.data.data
@@ -54,7 +86,7 @@ const fetchProductDetails = async (id) => {
     }
   } catch (err) {
     console.error('Error fetching product details:', err)
-    if (err.response && err.response.status === 404) {
+    if (axios.isAxiosError(err) && err.response && err.response.status === 404) {
       error.value = t('detail.error404')
     } else {
       error.value = t('detail.errorServer')
@@ -90,25 +122,6 @@ const appraisalImages = computed(() =>
   sortedImages.value.filter(img => img.imageType === 'APPRAISAL')
 )
 
-const activeGalleryTab = ref('product')
-
-const galleryTabs = computed(() => [
-  {
-    key: 'product',
-    labelKey: 'detail.tabProduct',
-    altKey: 'detail.productImageAlt',
-    images: productImages.value
-  },
-  {
-    key: 'appraisal',
-    labelKey: 'detail.tabAppraisal',
-    altKey: 'detail.appraisalImageAlt',
-    images: appraisalImages.value
-  }
-])
-
-const activeGallery = computed(() => galleryTabs.value.find(g => g.key === activeGalleryTab.value))
-
 // Accessories list (mock metadata since not provided by standard public API)
 const accessories = computed(() => [
   { name: t('detail.accList.box'), icon: 'inventory_2', present: true },
@@ -126,7 +139,7 @@ const accessories = computed(() => [
   { name: t('detail.accList.raincoat'), icon: 'umbrella', present: false }
 ])
 
-const openLightbox = (url) => {
+const openLightbox = (url: string) => {
   lightboxImageUrl.value = url
   lightboxOpen.value = true
   resetZoom()
@@ -156,7 +169,7 @@ const zoomOut = () => {
   }
 }
 
-const handleWheelZoom = (e) => {
+const handleWheelZoom = (e: WheelEvent) => {
   e.preventDefault()
   const next = zoomScale.value + (e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP)
   zoomScale.value = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, next))
@@ -174,13 +187,13 @@ const handleImageDoubleClick = () => {
   }
 }
 
-const startPan = (e) => {
+const startPan = (e: MouseEvent) => {
   if (zoomScale.value <= ZOOM_MIN) return
   isPanning.value = true
   panStart = { x: e.clientX, y: e.clientY, panX: panX.value, panY: panY.value }
 }
 
-const movePan = (e) => {
+const movePan = (e: MouseEvent) => {
   if (!isPanning.value) return
   panX.value = panStart.panX + (e.clientX - panStart.x)
   panY.value = panStart.panY + (e.clientY - panStart.y)
@@ -198,6 +211,7 @@ const openCertificateModal = async () => {
     console.error('Failed to generate QR code:', err)
     qrCodeDataUrl.value = ''
   }
+
   certificateModalOpen.value = true
 }
 
@@ -205,12 +219,50 @@ const closeCertificateModal = () => {
   certificateModalOpen.value = false
 }
 
+const waitForImagesToLoad = (el: HTMLElement) => {
+  const imgs = Array.from(el.querySelectorAll('img'))
+  return Promise.all(imgs.map((img) => {
+    if (img.complete && img.naturalWidth > 0) return Promise.resolve()
+    return new Promise<void>((resolve) => {
+      img.addEventListener('load', () => resolve(), { once: true })
+      img.addEventListener('error', () => resolve(), { once: true })
+    })
+  }))
+}
+
 const handleDownloadCard = async () => {
   if (!cardRef.value || cardDownloading.value) return
   cardDownloading.value = true
 
+  const coverImgEl = cardImageRef.value
+  const originalCoverSrc = coverImgEl ? coverImgEl.src : null
+
   try {
     await document.fonts.ready
+
+    // Swap the cover photo to an inlined data URL just for the capture, so a
+    // cross-origin image host without CORS headers doesn't render blank on
+    // the canvas. Reverted in `finally` so the live preview is unaffected.
+    if (coverImgEl) {
+      try {
+        const dataUrl = await toDataUrl(coverImage.value)
+        coverImgEl.src = dataUrl
+        await waitForImagesToLoad(cardRef.value)
+      } catch (err) {
+        console.error('Falling back to original image source for export:', err)
+        coverImgEl.src = originalCoverSrc
+      }
+    }
+
+    await waitForImagesToLoad(cardRef.value)
+
+    // html2canvas measures the icon font's line box differently than the
+    // live browser, so the badge text renders lower than it appears on
+    // screen. Nudge it up only for the capture, then restore afterwards.
+    if (badgeRef.value) {
+      badgeRef.value.style.alignItems = 'flex-start'
+      badgeRef.value.style.paddingTop = '4px'
+    }
 
     const canvas = await html2canvas(cardRef.value, {
       scale: 2,
@@ -219,16 +271,45 @@ const handleDownloadCard = async () => {
     })
 
     const imgData = canvas.toDataURL('image/jpeg', 0.92)
+    const canvasAspect = canvas.width / canvas.height
+
+    // Use a standard A4 page instead of a custom page sized to raw canvas
+    // pixels — an oversized custom page prints/crops incorrectly on real
+    // printers, which expect a standard paper size.
     const pdf = new jsPDF({
-      orientation: canvas.width >= canvas.height ? 'l' : 'p',
-      unit: 'px',
-      format: [canvas.width, canvas.height]
+      orientation: canvasAspect >= 1 ? 'l' : 'p',
+      unit: 'mm',
+      format: 'a4'
     })
-    pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height)
+    const pageWidth = pdf.internal.pageSize.getWidth()
+    const pageHeight = pdf.internal.pageSize.getHeight()
+    const margin = 15
+    const maxW = pageWidth - margin * 2
+    const maxH = pageHeight - margin * 2
+
+    let renderW = maxW
+    let renderH = renderW / canvasAspect
+    if (renderH > maxH) {
+      renderH = maxH
+      renderW = renderH * canvasAspect
+    }
+    const offsetX = (pageWidth - renderW) / 2
+    const offsetY = (pageHeight - renderH) / 2
+
+    pdf.setFillColor('#ffffff')
+    pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+    pdf.addImage(imgData, 'JPEG', offsetX, offsetY, renderW, renderH)
     pdf.save(`RealYou_Certificate_Card_${item.value?.inventoryNumber || item.value?.id}.pdf`)
   } catch (err) {
     console.error('Failed to generate certificate card PDF:', err)
   } finally {
+    if (coverImgEl && originalCoverSrc) {
+      coverImgEl.src = originalCoverSrc
+    }
+    if (badgeRef.value) {
+      badgeRef.value.style.alignItems = ''
+      badgeRef.value.style.paddingTop = ''
+    }
     cardDownloading.value = false
   }
 }
@@ -287,6 +368,9 @@ watch(() => route.params.id, (newId) => {
               <span class="material-symbols-outlined text-authentic-emerald text-[20px]">check_circle</span>
               <span class="font-label-caps text-sm text-authentic-emerald uppercase whitespace-nowrap">{{ $t('detail.authenticBadge') }}</span>
             </div>
+            <p class="font-body-md text-[16px] text-secondary leading-relaxed mt-6 max-w-2xl text-justify">
+              {{ $t('detail.authenticDesc') }}
+            </p>
           </div>
         </section>
 
@@ -303,23 +387,23 @@ watch(() => route.params.id, (newId) => {
 
           <!-- Details -->
           <div>
-            <h2 class="font-headline-sm text-headline-sm mb-12 border-b border-antique-gold/30 pb-4">
+            <h2 class="font-headline-sm text-[16px] mb-12 border-b border-antique-gold/30 pb-4">
               {{ $t('detail.specifications') }}
             </h2>
             <div class="space-y-0">
               <div class="flex justify-between py-6 border-b border-outline-variant/20 items-center">
-                <span class="font-label-caps text-label-caps text-secondary uppercase tracking-wider">{{ $t('detail.brand') }}</span>
-                <span class="font-title-lg text-title-lg text-on-surface">{{ item.brandName || 'N/A' }}</span>
+                <span class="font-label-caps text-[14px] text-secondary uppercase tracking-wider">{{ $t('detail.brand') }}</span>
+                <span class="font-title-lg text-[14px] text-on-surface">{{ item.brandName || 'N/A' }}</span>
               </div>
 
               <div class="flex justify-between py-6 border-b border-outline-variant/20 items-center">
-                <span class="font-label-caps text-label-caps text-secondary uppercase tracking-wider">{{ $t('detail.style') }}</span>
-                <span class="font-title-lg text-title-lg text-on-surface">{{ item.styleName || 'N/A' }}</span>
+                <span class="font-label-caps text-[14px] text-secondary uppercase tracking-wider">{{ $t('detail.style') }}</span>
+                <span class="font-title-lg text-[14px] text-on-surface">{{ item.styleName || 'N/A' }}</span>
               </div>
 
               <div class="flex justify-between py-6 border-b border-outline-variant/20 items-center">
-                <span class="font-label-caps text-label-caps text-secondary uppercase tracking-wider">{{ $t('detail.serialId') }}</span>
-                <span class="font-data-mono text-title-lg text-on-surface font-mono">{{ item.serialId || 'N/A' }}</span>
+                <span class="font-label-caps text-[14px] text-secondary uppercase tracking-wider">{{ $t('detail.serialId') }}</span>
+                <span class="font-data-mono text-[14px] text-on-surface font-mono">{{ item.serialId || 'N/A' }}</span>
               </div>
             </div>
           </div>
@@ -327,7 +411,7 @@ watch(() => route.params.id, (newId) => {
 
         <!-- Accessories -->
         <section class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop mb-32">
-          <h2 class="font-headline-sm text-headline-sm mb-12 border-b border-antique-gold/30 pb-4">
+          <h2 class="font-headline-sm text-[16px] mb-12 border-b border-antique-gold/30 pb-4">
             {{ $t('detail.accessories') }}
           </h2>
           <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-4">
@@ -345,41 +429,51 @@ watch(() => route.params.id, (newId) => {
               </span>
             </div>
           </div>
-        </section>
 
-        <!-- Product / Appraisal Image Gallery -->
-        <section class="py-24 bg-surface-container-lowest border-y border-outline-variant/20">
-          <div class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
-            <div class="mb-8 pb-6 border-b border-outline-variant/30">
-              <h2 class="font-headline-md text-on-surface">{{ $t('detail.galleryHeading') }}</h2>
-            </div>
-
-            <!-- Tabs -->
-            <div class="flex items-center gap-8 mb-6">
-              <button
-                v-for="tab in galleryTabs"
-                :key="tab.key"
-                @click="activeGalleryTab = tab.key"
-                class="pb-3 font-label-caps text-xs tracking-widest uppercase border-b-2 transition-colors duration-300"
-                :class="tab.key === activeGalleryTab
-                  ? 'text-primary border-primary'
-                  : 'text-secondary border-transparent hover:text-on-surface'"
-              >
-                {{ $t(tab.labelKey) }}
-              </button>
-            </div>
-
-            <!-- Gallery Grid -->
-            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              <!-- Active Images from API -->
+          <!-- Appraisal Detail Images -->
+          <div class="mt-16">
+            <h3 class="font-headline-sm text-[16px] mb-8 pb-4 border-b border-antique-gold/30">
+              {{ $t('detail.tabAppraisal') }}
+            </h3>
+            <div class="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-2">
               <div
-                v-for="(img, index) in activeGallery.images"
+                v-for="(img, index) in appraisalImages"
                 :key="img.id"
                 @click="openLightbox(img.imageUrl)"
                 class="aspect-square bg-surface-container overflow-hidden group relative cursor-pointer border border-outline-variant/20 shadow-sm"
               >
                 <img
-                  :alt="$t(activeGallery.altKey, { n: index + 1 })"
+                  :alt="$t('detail.appraisalImageAlt', { n: index + 1 })"
+                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  :src="img.imageUrl"
+                />
+                <div class="absolute inset-0 bg-charcoal/0 group-hover:bg-charcoal/20 transition-colors duration-300 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-white opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 transition-all text-[20px]">
+                    zoom_in
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Product Image Gallery -->
+        <section v-if="productImages.length > 0" class="py-24 bg-surface-container-lowest border-y border-outline-variant/20">
+          <div class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
+            <div class="mb-8 pb-6 border-b border-outline-variant/30">
+              <h2 class="font-headline-md text-[16px] text-on-surface">{{ $t('detail.galleryHeading') }}</h2>
+            </div>
+
+            <!-- Gallery Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              <div
+                v-for="(img, index) in productImages"
+                :key="img.id"
+                @click="openLightbox(img.imageUrl)"
+                class="aspect-square bg-surface-container overflow-hidden group relative cursor-pointer border border-outline-variant/20 shadow-sm"
+              >
+                <img
+                  :alt="$t('detail.productImageAlt', { n: index + 1 })"
                   class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   :src="img.imageUrl"
                 />
@@ -416,10 +510,10 @@ watch(() => route.params.id, (newId) => {
     <!-- Certificate Card Modal -->
     <div
       v-if="certificateModalOpen"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-charcoal/90 backdrop-blur-sm p-4"
+      class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-charcoal/90 backdrop-blur-sm p-4 py-10"
       @click="closeCertificateModal"
     >
-      <div class="relative max-w-sm w-full" @click.stop>
+      <div class="relative max-w-sm w-full my-auto" @click.stop>
         <button
           @click="toggleLocale"
           class="absolute -top-3 -left-3 z-10 text-white bg-charcoal hover:bg-charcoal/80 px-3 py-2 border border-white/20 transition-all rounded-full font-label-caps text-xs tracking-wider flex items-center justify-center"
@@ -433,47 +527,56 @@ watch(() => route.params.id, (newId) => {
           <span class="material-symbols-outlined text-[18px]">close</span>
         </button>
 
-        <div ref="cardRef" class="bg-white overflow-hidden shadow-2xl">
+        <div ref="cardRef" class="relative bg-white overflow-hidden shadow-2xl border-2 border-primary-container/70">
           <!-- Dark hero section -->
           <div class="bg-charcoal px-8 pt-8 pb-10 text-center">
             <p class="font-label-caps text-xs text-white tracking-[0.3em] uppercase mb-6">REAL YOU</p>
             <h3 class="font-headline-sm text-headline-sm text-white mb-3">{{ $t('detail.certificateCardTitle') }}</h3>
             <p class="font-data-mono text-xs text-white/50 tracking-widest mb-6">#{{ item.inventoryNumber || 'V-UNKNOWN' }}</p>
 
-            <div class="relative overflow-hidden bg-surface-container border border-white/10">
+            <div class="relative overflow-hidden bg-surface-container w-[62.5%] h-[200px] mx-auto">
               <img
+                ref="cardImageRef"
                 :src="coverImage"
                 :alt="`${item.brandName || 'Brand'} - ${item.styleName || 'Style'}`"
-                class="w-full h-auto max-h-80 object-contain mx-auto"
+                class="w-full h-full object-cover"
               />
-              <div class="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white shadow-md">
-                <span class="material-symbols-outlined text-authentic-emerald text-[16px]">check_circle</span>
-                <span class="font-label-caps text-xs text-authentic-emerald uppercase whitespace-nowrap">{{ $t('detail.authenticBadge') }}</span>
+              <div ref="badgeRef" class="absolute bottom-0 inset-x-0 h-9 flex items-center justify-center gap-1.5 bg-authentic-emerald">
+                <span class="material-symbols-outlined text-white text-[14px] leading-none">check_circle</span>
+                <span class="font-label-caps text-sm text-white uppercase whitespace-nowrap leading-none">{{ $t('detail.authenticBadge') }}</span>
               </div>
             </div>
           </div>
 
-          <!-- Details section -->
-          <div class="px-8 py-8">
-            <div class="grid grid-cols-2 gap-4 mb-8">
-              <div>
-                <p class="font-label-caps text-[10px] text-secondary uppercase tracking-wider mb-1">{{ $t('detail.brand') }}</p>
-                <p class="font-title-lg text-title-lg text-on-surface">{{ item.brandName || 'N/A' }}</p>
+          <!-- Gold divider between hero and details -->
+          <div class="h-[2px] bg-primary-container"></div>
+
+          <!-- Details section: product info left, QR code right -->
+          <div class="px-8 pt-8 pb-4 overflow-hidden">
+            <div class="grid grid-cols-2 gap-6 mb-8">
+              <div class="space-y-4">
+                <div>
+                  <p class="font-label-caps text-[14px] text-secondary uppercase tracking-wider mb-1">{{ $t('detail.brand') }}</p>
+                  <p class="font-title-lg text-[14px] text-on-surface">{{ item.brandName || 'N/A' }}</p>
+                </div>
+                <div>
+                  <p class="font-label-caps text-[14px] text-secondary uppercase tracking-wider mb-1">{{ $t('detail.style') }}</p>
+                  <p class="font-title-lg text-[14px] text-on-surface">{{ item.styleName || 'N/A' }}</p>
+                </div>
+                <div>
+                  <p class="font-label-caps text-[14px] text-secondary uppercase tracking-wider mb-1">{{ $t('detail.serialId') }}</p>
+                  <p class="font-data-mono text-[14px] text-on-surface font-mono">{{ item.serialId || 'N/A' }}</p>
+                </div>
               </div>
-              <div>
-                <p class="font-label-caps text-[10px] text-secondary uppercase tracking-wider mb-1">{{ $t('detail.style') }}</p>
-                <p class="font-title-lg text-title-lg text-on-surface">{{ item.styleName || 'N/A' }}</p>
-              </div>
-              <div class="col-span-2">
-                <p class="font-label-caps text-[10px] text-secondary uppercase tracking-wider mb-1">{{ $t('detail.serialId') }}</p>
-                <p class="font-data-mono text-title-lg text-on-surface font-mono">{{ item.serialId || 'N/A' }}</p>
+              <div class="flex flex-col items-center justify-center gap-2">
+                <div class="p-1.5 bg-white border border-outline-variant/40">
+                  <img v-if="qrCodeDataUrl" :src="qrCodeDataUrl" alt="QR Code" class="w-[95px] h-[95px]" />
+                </div>
+                <p class="font-label-caps text-[9px] text-secondary tracking-widest uppercase">{{ $t('detail.scanToVerify') }}</p>
               </div>
             </div>
 
-            <div class="flex justify-center mb-6">
-              <img v-if="qrCodeDataUrl" :src="qrCodeDataUrl" alt="QR Code" class="w-28 h-28" />
-            </div>
-
+            <div class="h-[1px] bg-outline-variant/30 mb-2"></div>
             <p class="font-data-mono text-[10px] text-secondary text-center">{{ $t('footer.copyright') }}</p>
           </div>
         </div>

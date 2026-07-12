@@ -1,14 +1,14 @@
-<script setup>
-defineProps({
-  collapse: {
-    type: Boolean,
-    default: false
-  },
-  isTop: {
-    type: Boolean,
-    default: false
+<script setup lang="ts">
+withDefaults(
+  defineProps<{
+    collapse?: boolean
+    isTop?: boolean
+  }>(),
+  {
+    collapse: false,
+    isTop: false
   }
-})
+)
 </script>
 
 <template>
