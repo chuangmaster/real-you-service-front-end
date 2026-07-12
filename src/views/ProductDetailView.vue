@@ -553,8 +553,12 @@ watch(() => route.params.id, (newId) => {
 
           <!-- Details section: product info left, QR code right -->
           <div class="px-8 pt-8 pb-4 overflow-hidden">
-            <div class="grid grid-cols-2 gap-6 mb-8">
-              <div class="space-y-4">
+            <div class="relative grid grid-cols-2 gap-6 mb-8 overflow-hidden">
+              <p class="card-watermark absolute inset-0 z-0 flex items-center justify-center text-[56px] text-primary-container/10 tracking-widest uppercase pointer-events-none select-none -rotate-12 whitespace-nowrap">
+                REAL YOU
+              </p>
+
+              <div class="relative z-10 space-y-4">
                 <div>
                   <p class="font-label-caps text-[14px] text-secondary uppercase tracking-wider mb-1">{{ $t('detail.brand') }}</p>
                   <p class="font-title-lg text-[14px] text-on-surface">{{ item.brandName || 'N/A' }}</p>
@@ -568,7 +572,7 @@ watch(() => route.params.id, (newId) => {
                   <p class="font-data-mono text-[14px] text-on-surface font-mono">{{ item.serialId || 'N/A' }}</p>
                 </div>
               </div>
-              <div class="flex flex-col items-center justify-center gap-2">
+              <div class="relative z-10 flex flex-col items-center justify-center gap-2">
                 <div class="p-1.5 bg-white border border-outline-variant/40">
                   <img v-if="qrCodeDataUrl" :src="qrCodeDataUrl" alt="QR Code" class="w-[95px] h-[95px]" />
                 </div>
@@ -656,5 +660,10 @@ watch(() => route.params.id, (newId) => {
 }
 .animate-pulse {
   animation: pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.card-watermark {
+  font-family: "AFuturaOrto", sans-serif;
+  font-weight: 700;
 }
 </style>
