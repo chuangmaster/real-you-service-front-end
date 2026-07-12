@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 
 interface CarouselImage {
   id: string | number
@@ -18,18 +18,13 @@ const emit = defineEmits<{
 const trackRef = ref<HTMLElement | null>(null)
 const activeIndex = ref(0)
 const hasOverflow = ref(false)
+// How many slides are visible at once (2 on mobile, 4 on desktop) — measured
+// live from the DOM rather than guessed from a media query.
+const visibleCount = ref(1)
 
 let resizeObserver: ResizeObserver | null = null
 
-const updateOverflow = () => {
-  const el = trackRef.value
-  if (!el) return
-  hasOverflow.value = el.scrollWidth - el.clientWidth > 1
-}
-
-// One "step" is a single slide's rendered width (which differs by
-// breakpoint, e.g. 2-up on mobile vs 4-up on desktop) plus the track gap,
-// measured live from the DOM rather than guessed from a media query.
+// One "step" is a single slide's rendered width plus the track gap.
 const stepWidth = () => {
   const el = trackRef.value
   const slide = el?.firstElementChild as HTMLElement | undefined
@@ -38,10 +33,25 @@ const stepWidth = () => {
   return slide.getBoundingClientRect().width + gap
 }
 
+const updateOverflow = () => {
+  const el = trackRef.value
+  if (!el) return
+  hasOverflow.value = el.scrollWidth - el.clientWidth > 1
+  const step = stepWidth()
+  visibleCount.value = step > 0 ? Math.max(1, Math.round(el.clientWidth / step)) : 1
+}
+
+// The highest slide index that can actually become the leftmost visible
+// slide — once that many slides from the end are showing, the track is
+// scrolled as far as it goes. This is also the number of reachable scroll
+// positions minus one, i.e. dotCount - 1.
+const maxIndex = computed(() => Math.max(0, props.images.length - visibleCount.value))
+const dotCount = computed(() => maxIndex.value + 1)
+
 const scrollToIndex = (index: number) => {
   const el = trackRef.value
   if (!el) return
-  const clamped = Math.max(0, Math.min(index, props.images.length - 1))
+  const clamped = Math.max(0, Math.min(index, maxIndex.value))
   el.scrollTo({ left: clamped * stepWidth(), behavior: 'smooth' })
 }
 
@@ -106,7 +116,7 @@ watch(() => props.images, async () => {
       </button>
       <button
         type="button"
-        :disabled="activeIndex >= images.length - 1"
+        :disabled="activeIndex >= maxIndex"
         @click="next"
         class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 text-white bg-charcoal/70 hover:bg-charcoal disabled:opacity-30 disabled:cursor-not-allowed p-1.5 border border-white/20 transition-all rounded-full flex items-center justify-center"
       >
@@ -115,12 +125,12 @@ watch(() => props.images, async () => {
 
       <div class="mt-3 flex items-center justify-center gap-1.5">
         <button
-          v-for="(img, index) in images"
-          :key="img.id"
+          v-for="n in dotCount"
+          :key="n"
           type="button"
-          @click="goTo(index)"
+          @click="goTo(n - 1)"
           class="h-1.5 rounded-full transition-all duration-300"
-          :class="index === activeIndex ? 'w-5 bg-on-surface' : 'w-1.5 bg-outline-variant hover:bg-secondary'"
+          :class="n - 1 === activeIndex ? 'w-5 bg-on-surface' : 'w-1.5 bg-outline-variant hover:bg-secondary'"
         />
       </div>
     </template>
