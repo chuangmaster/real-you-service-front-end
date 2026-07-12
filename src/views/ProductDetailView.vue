@@ -389,7 +389,7 @@ watch(() => route.params.id, (newId) => {
         <section class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop grid grid-cols-1 lg:grid-cols-2 gap-20 mb-32">
           <!-- Cover Image Column -->
           <div>
-            <div class="relative overflow-hidden aspect-[4/5] bg-surface-container border border-outline-variant/20 shadow-sm group">
+            <div class="relative overflow-hidden aspect-[4/5] w-3/4 mx-auto bg-surface-container border border-outline-variant/20 shadow-sm group">
               <img
                 :alt="`${item.brandName || 'Brand'} - ${item.styleName || 'Style'}`"
                 class="w-full h-full object-contain transition-transform duration-[2000ms] group-hover:scale-105"
