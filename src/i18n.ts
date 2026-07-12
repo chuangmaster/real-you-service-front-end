@@ -91,7 +91,7 @@ const messages = {
       productNumber: '證書編號',
       authenticBadge: '鑑定為真',
       authenticDesc: '本商品由REAL YOU專業鑑定團隊依據品牌製作工藝、材質特徵、五金、刻印、車縫、皮革紋理及整體一致性等多項指標進行全面檢視與交叉驗證，經標準收購暨鑑定程序後，符合正品標準。該鑑定結果判斷係基於商品於鑑定當下之實際狀態之專業判定。',
-      specifications: '商品明細',
+      specifications: '商品詳情',
       brand: '品牌',
       style: '款式',
       serialId: '序號',
