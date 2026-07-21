@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A Vue 3 + Vite single-page app ("REAL YOU") that lets a user enter a product UUID and view its luxury-goods authentication certificate (brand/style/serial, accessory checklist, product/appraisal photo galleries, and a downloadable PDF certificate card with QR code). It is a public-facing lookup tool with no auth, backed by a separate ASP.NET-style backend (reachable locally at `http://localhost:5176`, exposing endpoints under `/api/public/inventory/...`).
+A Vue 3 + Vite single-page app ("REAL YOU") that lets a user enter a product UUID and view its luxury-goods authentication certificate (brand/style/serial, accessory checklist, product/appraisal photo galleries, and a downloadable PDF certificate card with QR code). It is a public-facing lookup tool with no auth, backed by a separate ASP.NET-style backend (reachable locally at `http://localhost:5000`, exposing endpoints under `/api/public/inventory/...`).
 
 ## Commands
 
