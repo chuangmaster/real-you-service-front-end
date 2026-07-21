@@ -23,6 +23,7 @@ interface InventoryItem {
   styleName?: string
   serialId?: string
   images?: InventoryImage[]
+  accessories?: string[]
 }
 
 const route = useRoute()
@@ -139,22 +140,32 @@ const appraisalCarouselImages = computed(() =>
     }))
 )
 
-// Accessories list (mock metadata since not provided by standard public API)
-const accessories = computed(() => [
-  { name: t('detail.accList.box'), icon: 'inventory_2', present: true },
-  { name: t('detail.accList.dustBag'), icon: 'shopping_bag', present: true },
-  { name: t('detail.accList.purchaseProof'), icon: 'receipt_long', present: true },
-  { name: t('detail.accList.shoppingBag'), icon: 'shopping_cart', present: true },
-  { name: t('detail.accList.shoulderStrap'), icon: 'link', present: false },
-  { name: t('detail.accList.felt'), icon: 'texture', present: false },
-  { name: t('detail.accList.pillow'), icon: 'chair', present: false },
-  { name: t('detail.accList.card'), icon: 'credit_card', present: true },
-  { name: t('detail.accList.lockKey'), icon: 'lock', present: false },
-  { name: t('detail.accList.ribbon'), icon: 'bookmark', present: false },
-  { name: t('detail.accList.brandCard'), icon: 'badge', present: true },
-  { name: t('detail.accList.certificate'), icon: 'verified_user', present: true },
-  { name: t('detail.accList.raincoat'), icon: 'umbrella', present: false }
-])
+// Fixed display order for the 13 accessory slots. `key` matches both the
+// `detail.accList.*` i18n key and the backend's accessory code exactly.
+const ACCESSORY_KEYS = [
+  { key: 'box', icon: 'inventory_2' },
+  { key: 'dustBag', icon: 'shopping_bag' },
+  { key: 'purchaseProof', icon: 'receipt_long' },
+  { key: 'shoppingBag', icon: 'shopping_cart' },
+  { key: 'shoulderStrap', icon: 'link' },
+  { key: 'felt', icon: 'texture' },
+  { key: 'pillow', icon: 'chair' },
+  { key: 'card', icon: 'credit_card' },
+  { key: 'lockKey', icon: 'lock' },
+  { key: 'ribbon', icon: 'bookmark' },
+  { key: 'brandCard', icon: 'badge' },
+  { key: 'certificate', icon: 'verified_user' },
+  { key: 'raincoat', icon: 'umbrella' }
+]
+
+const accessories = computed(() => {
+  const owned = item.value?.accessories ?? []
+  return ACCESSORY_KEYS.map(({ key, icon }) => ({
+    name: t(`detail.accList.${key}`),
+    icon,
+    present: owned.includes(key)
+  }))
+})
 
 const openLightbox = (url: string) => {
   lightboxImageUrl.value = url

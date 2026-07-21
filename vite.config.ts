@@ -7,11 +7,11 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:5176',
+        target: 'http://localhost:5000',
         changeOrigin: true,
       },
       '^/product/.+/share$': {
-        target: 'http://localhost:5176',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/product\/(.+)\/share$/, '/api/public/inventory/$1/share'),
       }
