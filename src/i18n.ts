@@ -63,6 +63,31 @@ const messages = {
       terms: 'Terms of Service',
       appraisal: 'Authentication Service',
       copyright: '© 2026 REAL YOU. ALL RIGHTS RESERVED.'
+    },
+    order: {
+      loading: 'RETRIEVING ORDER DETAILS...',
+      errorInvalidLink: 'This order link is invalid or has expired.',
+      errorServer: 'Unable to load order details. Please try again later.',
+      closeWindow: 'CLOSE',
+      summary: {
+        status: 'Status',
+        orderDate: 'Order Date',
+        customerName: 'Customer',
+        totalAmount: 'Total Amount',
+        itemsHeading: 'Items'
+      },
+      bind: {
+        prompt: 'Agree to bind your LINE account to automatically receive updates about this order.',
+        button: 'BIND LINE ACCOUNT',
+        submitting: 'BINDING...',
+        success: 'Your LINE account is now bound. You will receive updates about this order automatically.',
+        errorLiffUnavailable: 'LINE service is temporarily unavailable. Please try again later.',
+        errors: {
+          invalidLineToken: 'LINE login verification failed. Please log in to LINE again and retry.',
+          lineAlreadyBound: 'This LINE account is already bound to another customer. Please contact customer service for help.',
+          customerAlreadyBound: 'This customer has already completed LINE binding. To switch accounts, please contact your sales representative.'
+        }
+      }
     }
   },
   'zh-TW': {
@@ -127,6 +152,31 @@ const messages = {
       terms: '線上收購服務',
       appraisal: '精品鑑定',
       copyright: '© 2026 REAL YOU。版權所有。'
+    },
+    order: {
+      loading: '正在讀取訂單資料...',
+      errorInvalidLink: '此訂單連結無效或已過期。',
+      errorServer: '無法載入訂單資料，請稍後再試。',
+      closeWindow: '關閉視窗',
+      summary: {
+        status: '狀態',
+        orderDate: '訂單日期',
+        customerName: '客戶',
+        totalAmount: '總金額',
+        itemsHeading: '品項'
+      },
+      bind: {
+        prompt: '同意綁定您的 LINE 帳號，之後訂單狀態將自動透過 LINE 通知您。',
+        button: '綁定 LINE 帳號',
+        submitting: '綁定中...',
+        success: '已完成 LINE 綁定，之後訂單狀態將自動透過 LINE 通知您。',
+        errorLiffUnavailable: 'LINE 服務暫時無法使用，請稍後再試。',
+        errors: {
+          invalidLineToken: 'LINE 登入驗證失敗，請重新登入 LINE 後再試一次。',
+          lineAlreadyBound: '此 LINE 帳號已綁定給另一位客戶，請聯絡客服協助處理。',
+          customerAlreadyBound: '此客戶已完成過綁定，如需更換 LINE 帳號請聯絡業務/客服協助。'
+        }
+      }
     }
   }
 }
