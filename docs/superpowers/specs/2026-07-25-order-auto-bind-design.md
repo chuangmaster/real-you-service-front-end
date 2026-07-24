@@ -38,7 +38,7 @@ sequenceDiagram
         FE->>API: POST /api/public/orders/bind { t, lineIdToken }
         alt 200 成功
             API-->>FE: { success: true }
-            FE-->>Customer: summary.isBound = true，顯示成功訊息
+            FE-->>Customer: summary.isBound = true，不顯示任何成功訊息（綁定區塊直接消失）
         else 404
             API-->>FE: token 已失效
             FE-->>Customer: 切換為「連結已失效」錯誤頁（沿用現有 404 處理）
@@ -91,6 +91,8 @@ onMounted(async () => {
 ```
 
 其餘內容（提示文字、按鈕、`bindError` 顯示、`binding` 狀態的 disabled/loading 文字）完全不變——手動點擊流程（`handleBind`、`binding`、`bindError`）維持原樣，這次調整只新增一條「跳過按鈕、直接靜默嘗試」的路徑，兩條路徑除了觸發方式與錯誤呈現方式不同之外，呼叫的是同一組 API。
+
+**成功後不顯示任何確認訊息**：無論是透過自動靜默綁定、還是使用者手動點擊按鈕完成綁定，一旦 `summary.isBound` 變成 `true`，原本的「✓ 已完成 LINE 綁定」成功區塊**整個移除**，綁定區塊直接消失，頁面只剩下訂單摘要——這是刻意決定，目的是讓整個綁定流程對使用者來說盡量無感、安靜地在背後完成，不需要額外的確認提示。對應的 `order.bind.success` i18n 字串（`en`／`zh-TW` 皆有）一併移除，因為不再有任何地方引用它。
 
 ### 附帶效果
 使用者若在未登入狀態下手動點擊按鈕，經過 `liff.login()` 導轉登入後導回同一網址，此時新一輪 `liff.init()` 會回報 `isLoggedIn() === true`，`attemptAutoBind()` 因此會自動完成綁定，使用者不需要在導回頁面後再點第二次按鈕。

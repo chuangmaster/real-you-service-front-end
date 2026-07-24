@@ -80,7 +80,6 @@ const messages = {
         prompt: 'Agree to bind your LINE account to automatically receive updates about this order.',
         button: 'BIND LINE ACCOUNT',
         submitting: 'BINDING...',
-        success: 'Your LINE account is now bound. You will receive updates about this order automatically.',
         errorLiffUnavailable: 'LINE service is temporarily unavailable. Please try again later.',
         errors: {
           invalidLineToken: 'LINE login verification failed. Please log in to LINE again and retry.',
@@ -169,7 +168,6 @@ const messages = {
         prompt: '同意綁定您的 LINE 帳號，之後訂單狀態將自動透過 LINE 通知您。',
         button: '綁定 LINE 帳號',
         submitting: '綁定中...',
-        success: '已完成 LINE 綁定，之後訂單狀態將自動透過 LINE 通知您。',
         errorLiffUnavailable: 'LINE 服務暫時無法使用，請稍後再試。',
         errors: {
           invalidLineToken: 'LINE 登入驗證失敗，請重新登入 LINE 後再試一次。',

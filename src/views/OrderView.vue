@@ -292,23 +292,17 @@ onMounted(async () => {
       </div>
 
       <!-- BIND SECTION -->
-      <template v-if="!autoBindInProgress">
-        <div v-if="!summary.isBound" class="bg-white border border-outline-variant/30 shadow-sm p-6 text-center">
-          <p class="font-body-md text-sm text-secondary mb-5">{{ $t('order.bind.prompt') }}</p>
-          <p v-if="bindError" class="font-body-md text-xs text-primary mb-4">{{ bindError }}</p>
-          <button
-            class="w-full bg-primary text-white px-8 py-4 font-label-caps text-label-caps hover:bg-primary-container transition-colors duration-300 tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="binding"
-            @click="handleBind"
-          >
-            {{ binding ? $t('order.bind.submitting') : $t('order.bind.button') }}
-          </button>
-        </div>
-        <div v-else class="bg-authentic-emerald/10 border border-authentic-emerald/20 p-6 text-center">
-          <span class="material-symbols-outlined text-authentic-emerald text-[32px] mb-2 block">check_circle</span>
-          <p class="font-body-md text-sm text-on-surface">{{ $t('order.bind.success') }}</p>
-        </div>
-      </template>
+      <div v-if="!summary.isBound && !autoBindInProgress" class="bg-white border border-outline-variant/30 shadow-sm p-6 text-center">
+        <p class="font-body-md text-sm text-secondary mb-5">{{ $t('order.bind.prompt') }}</p>
+        <p v-if="bindError" class="font-body-md text-xs text-primary mb-4">{{ bindError }}</p>
+        <button
+          class="w-full bg-primary text-white px-8 py-4 font-label-caps text-label-caps hover:bg-primary-container transition-colors duration-300 tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="binding"
+          @click="handleBind"
+        >
+          {{ binding ? $t('order.bind.submitting') : $t('order.bind.button') }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
