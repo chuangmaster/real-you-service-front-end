@@ -70,8 +70,9 @@ const fetchOrderSummary = async () => {
 }
 
 // LIFF state — initialized on mount, in parallel with the summary fetch.
-// Only required at the moment the customer taps "bind", so a failure here
-// doesn't block viewing the order summary.
+// A failure here doesn't block viewing the order summary; it only means
+// any bind attempt (automatic or manual) later falls back to showing the
+// manual button.
 const liffReady = ref(false)
 const isInLiffClient = ref(false)
 
@@ -93,6 +94,7 @@ const closeLiffWindow = () => {
 // Binding state
 const binding = ref(false)
 const bindError = ref('')
+const autoBindInProgress = ref(false)
 
 const handleBind = async () => {
   if (binding.value || !summary.value) return
@@ -151,6 +153,41 @@ const handleBind = async () => {
   }
 }
 
+// Silently completes binding when we already know the customer is logged
+// into LINE, so they don't have to tap the button at all. Falls back to
+// showing the manual button whenever login state can't be confirmed —
+// see docs/superpowers/specs/2026-07-25-order-auto-bind-design.md.
+const attemptAutoBind = async () => {
+  if (!summary.value || summary.value.isBound) return
+  if (!liffReady.value || !liff.isLoggedIn()) return
+
+  autoBindInProgress.value = true
+  try {
+    const lineIdToken = liff.getIDToken()
+    const response = await axios.post('/api/public/orders/bind', {
+      t: token.value,
+      lineIdToken
+    })
+
+    if (response.data && response.data.success) {
+      summary.value.isBound = true
+    }
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response && err.response.status === 404) {
+      // Same "invalid link" state as the initial GET /view 404 — the
+      // share token itself is no longer valid.
+      summary.value = null
+      error.value = t('order.errorInvalidLink')
+    } else {
+      // Silent by design: a failed background attempt just falls back to
+      // showing the manual bind button, with no error copy.
+      console.error('Silent auto-bind failed:', err)
+    }
+  } finally {
+    autoBindInProgress.value = false
+  }
+}
+
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat(locale.value === 'en' ? 'en-US' : 'zh-TW', {
     style: 'currency',
@@ -167,9 +204,9 @@ const formattedOrderDate = computed(() => {
   return new Date(summary.value.orderDate).toLocaleDateString(locale.value === 'en' ? 'en-US' : 'zh-TW')
 })
 
-onMounted(() => {
-  fetchOrderSummary()
-  initLiff()
+onMounted(async () => {
+  await Promise.all([fetchOrderSummary(), initLiff()])
+  attemptAutoBind()
 })
 </script>
 
@@ -255,7 +292,7 @@ onMounted(() => {
       </div>
 
       <!-- BIND SECTION -->
-      <div v-if="!summary.isBound" class="bg-white border border-outline-variant/30 shadow-sm p-6 text-center">
+      <div v-if="!summary.isBound && !autoBindInProgress" class="bg-white border border-outline-variant/30 shadow-sm p-6 text-center">
         <p class="font-body-md text-sm text-secondary mb-5">{{ $t('order.bind.prompt') }}</p>
         <p v-if="bindError" class="font-body-md text-xs text-primary mb-4">{{ bindError }}</p>
         <button
