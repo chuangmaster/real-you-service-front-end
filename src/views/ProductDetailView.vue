@@ -86,6 +86,10 @@ const fetchProductDetails = async (id: string | string[]) => {
     } else {
       throw new Error('Invalid API response format')
     }
+
+    if (item.value?.brandName || item.value?.styleName) {
+      document.title = `REAL YOU | ${[item.value.brandName, item.value.styleName].filter(Boolean).join(' ')} 鑑定證書`
+    }
   } catch (err) {
     console.error('Error fetching product details:', err)
     if (axios.isAxiosError(err) && err.response && err.response.status === 404) {

@@ -18,6 +18,21 @@ export default defineConfig({
         target: 'http://localhost:5000',
         changeOrigin: true,
       },
+      // Mirrors nginx.conf's Linespider map + `/order` location: only LINE's
+      // link-preview crawler gets proxied to the backend's server-rendered
+      // order-share HTML; everyone else (including the real LIFF in-app
+      // browser) falls through to bypass() and gets the normal SPA.
+      '^/order$': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        bypass: (req) => {
+          const userAgent = req.headers['user-agent'] || ''
+          if (!/Linespider/i.test(userAgent)) {
+            return req.url
+          }
+        },
+        rewrite: (path) => path.replace(/^\/order/, '/api/public/orders/share'),
+      },
       '^/product/.+/share$': {
         target: 'http://localhost:5000',
         changeOrigin: true,
