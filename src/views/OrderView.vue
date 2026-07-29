@@ -55,6 +55,9 @@ const fetchOrderSummary = async () => {
     })
     if (response.data && response.data.success) {
       summary.value = response.data.data
+      if (summary.value?.orderNumber) {
+        document.title = `REAL YOU | 訂單 #${summary.value.orderNumber}`
+      }
     } else {
       error.value = t('order.errorServer')
     }
