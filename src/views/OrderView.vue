@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import liff from '@line/liff'
+import OrderStatusBadge from '../components/OrderStatusBadge.vue'
 
 interface OrderItem {
   brand: string
@@ -256,7 +257,7 @@ onMounted(async () => {
         <div class="space-y-0">
           <div class="flex justify-between py-4 border-b border-outline-variant/20">
             <span class="font-label-caps text-xs text-secondary uppercase tracking-wider">{{ $t('order.summary.status') }}</span>
-            <span class="font-title-lg text-sm text-on-surface">{{ summary.status }}</span>
+            <OrderStatusBadge :status="summary.status" />
           </div>
           <div class="flex justify-between py-4 border-b border-outline-variant/20">
             <span class="font-label-caps text-xs text-secondary uppercase tracking-wider">{{ $t('order.summary.orderDate') }}</span>
