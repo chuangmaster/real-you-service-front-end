@@ -69,6 +69,11 @@ const messages = {
       errorInvalidLink: 'This order link is invalid or has expired.',
       errorServer: 'Unable to load order details. Please try again later.',
       closeWindow: 'CLOSE',
+      status: {
+        pending: 'Processing',
+        completed: 'Completed',
+        cancelled: 'Cancelled'
+      },
       summary: {
         status: 'Status',
         orderDate: 'Order Date',
@@ -157,6 +162,11 @@ const messages = {
       errorInvalidLink: '此訂單連結無效或已過期。',
       errorServer: '無法載入訂單資料，請稍後再試。',
       closeWindow: '關閉視窗',
+      status: {
+        pending: '處理中',
+        completed: '已完成',
+        cancelled: '已取消'
+      },
       summary: {
         status: '狀態',
         orderDate: '訂單日期',
