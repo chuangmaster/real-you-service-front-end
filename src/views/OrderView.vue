@@ -255,7 +255,7 @@ onMounted(async () => {
         <h1 class="font-headline-sm text-lg text-on-surface mb-6">#{{ summary.orderNumber }}</h1>
 
         <div class="space-y-0">
-          <div class="flex justify-between py-4 border-b border-outline-variant/20">
+          <div class="flex items-center justify-between py-4 border-b border-outline-variant/20">
             <span class="font-label-caps text-xs text-secondary uppercase tracking-wider">{{ $t('order.summary.status') }}</span>
             <OrderStatusBadge :status="summary.status" />
           </div>
