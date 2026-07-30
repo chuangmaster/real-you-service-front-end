@@ -70,7 +70,7 @@ const messages = {
       errorServer: 'Unable to load order details. Please try again later.',
       closeWindow: 'CLOSE',
       status: {
-        pending: 'Processing',
+        placed: 'Placed',
         completed: 'Completed',
         cancelled: 'Cancelled'
       },
@@ -163,7 +163,7 @@ const messages = {
       errorServer: '無法載入訂單資料，請稍後再試。',
       closeWindow: '關閉視窗',
       status: {
-        pending: '處理中',
+        placed: '已下單',
         completed: '已完成',
         cancelled: '已取消'
       },

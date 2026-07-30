@@ -12,8 +12,8 @@ const { t } = useI18n()
 // these with string interpolation (e.g. `bg-${color}/10`) would silently
 // drop them from the production build.
 const STATUS_STYLES: Record<string, { labelKey: string; colorClass: string }> = {
-  PENDING: {
-    labelKey: 'order.status.pending',
+  PLACED: {
+    labelKey: 'order.status.placed',
     colorClass: 'text-primary bg-primary/10 border-primary/20'
   },
   COMPLETED: {
