@@ -43,6 +43,11 @@ const summary = ref<OrderSummary | null>(null)
 
 const fetchOrderSummary = async () => {
   if (!token.value) {
+    // Vue batches this ref update into the same microtask flush as the
+    // initial mount, so without yielding to a real animation frame first,
+    // the browser skips straight from nothing painted to the error state —
+    // the loading spinner never actually renders on screen.
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
     error.value = t('order.errorInvalidLink')
     loading.value = false
     return
