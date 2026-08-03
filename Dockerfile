@@ -4,6 +4,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+ARG VITE_LIFF_ID
+ENV VITE_LIFF_ID=$VITE_LIFF_ID
 RUN npm run build
 
 # Production Stage

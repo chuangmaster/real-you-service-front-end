@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router'
+import { RouterView, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
+const route = useRoute()
 const { locale } = useI18n()
 
 const toggleLocale = () => {
@@ -12,7 +13,7 @@ const toggleLocale = () => {
 <template>
   <div class="min-h-screen flex flex-col bg-background text-on-background font-body-md overflow-x-hidden">
     <!-- Navbar -->
-    <nav class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30">
+    <nav v-if="!route.meta.minimal" class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30">
       <div class="max-w-container-max mx-auto px-margin-mobile h-16 flex items-center justify-between">
         <router-link to="/" class="brand-logo-nav hover:opacity-80 transition-opacity">
           REAL YOU
@@ -30,12 +31,12 @@ const toggleLocale = () => {
     </nav>
 
     <!-- Main Content -->
-    <main class="flex-grow pt-16">
+    <main class="flex-grow" :class="{ 'pt-16': !route.meta.minimal }">
       <RouterView />
     </main>
 
     <!-- Footer -->
-    <footer class="bg-charcoal text-white/60 py-12 border-t border-white/5 mt-auto">
+    <footer v-if="!route.meta.minimal" class="bg-charcoal text-white/60 py-12 border-t border-white/5 mt-auto">
       <div class="max-w-container-max mx-auto px-margin-mobile flex flex-col md:flex-row justify-between items-center gap-8">
         <span class="brand-logo-footer">REAL YOU</span>
         <div class="flex gap-8 font-label-caps text-[10px] tracking-widest uppercase">

@@ -1,0 +1,317 @@
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import axios from 'axios'
+import liff from '@line/liff'
+import OrderStatusBadge from '../components/OrderStatusBadge.vue'
+
+interface OrderItem {
+  brand: string
+  style: string
+  imageUrl: string | null
+  amount: number
+}
+
+interface OrderSummary {
+  orderNumber: string
+  orderKindDisplay: string
+  status: string
+  orderDate: string
+  customerName: string
+  totalAmount: number
+  items: OrderItem[]
+  isBound: boolean
+}
+
+const route = useRoute()
+const { t, locale } = useI18n()
+
+const token = computed(() => {
+  const raw = route.query.t
+  return typeof raw === 'string' ? raw : undefined
+})
+
+const toggleLocale = () => {
+  locale.value = locale.value === 'en' ? 'zh-TW' : 'en'
+}
+
+// Order summary state
+const loading = ref(true)
+const error = ref('')
+const summary = ref<OrderSummary | null>(null)
+
+const fetchOrderSummary = async () => {
+  if (!token.value) {
+    // Vue batches this ref update into the same microtask flush as the
+    // initial mount, so without yielding to a real animation frame first,
+    // the browser skips straight from nothing painted to the error state —
+    // the loading spinner never actually renders on screen.
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+    error.value = t('order.errorInvalidLink')
+    loading.value = false
+    return
+  }
+
+  loading.value = true
+  error.value = ''
+  try {
+    const response = await axios.get('/api/public/orders/view', {
+      params: { t: token.value }
+    })
+    if (response.data && response.data.success) {
+      summary.value = response.data.data
+      if (summary.value?.orderNumber) {
+        document.title = `REAL YOU | 訂單 #${summary.value.orderNumber}`
+      }
+    } else {
+      error.value = t('order.errorServer')
+    }
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response && err.response.status === 404) {
+      error.value = t('order.errorInvalidLink')
+    } else {
+      error.value = t('order.errorServer')
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+// LIFF state — initialized on mount, in parallel with the summary fetch.
+// A failure here doesn't block viewing the order summary; it only means
+// any bind attempt (automatic or manual) later falls back to showing the
+// manual button.
+const liffReady = ref(false)
+const isInLiffClient = ref(false)
+
+const initLiff = async () => {
+  try {
+    await liff.init({ liffId: import.meta.env.VITE_LIFF_ID })
+    liffReady.value = true
+    isInLiffClient.value = liff.isInClient()
+  } catch (err) {
+    console.error('Failed to initialize LIFF:', err)
+    liffReady.value = false
+  }
+}
+
+const closeLiffWindow = () => {
+  liff.closeWindow()
+}
+
+// Binding state
+const binding = ref(false)
+const bindError = ref('')
+const autoBindInProgress = ref(false)
+
+const handleBind = async () => {
+  if (binding.value || !summary.value) return
+
+  bindError.value = ''
+
+  if (!liffReady.value) {
+    bindError.value = t('order.bind.errorLiffUnavailable')
+    return
+  }
+
+  binding.value = true
+  try {
+    if (!liff.isLoggedIn()) {
+      // Redirects the whole page to LINE Login and back to this same URL
+      // (including the `t` query param); execution does not continue past this call.
+      liff.login({ redirectUri: window.location.href })
+      return
+    }
+
+    const lineIdToken = liff.getIDToken()
+    const response = await axios.post('/api/public/orders/bind', {
+      t: token.value,
+      lineIdToken
+    })
+
+    if (response.data && response.data.success) {
+      summary.value.isBound = true
+    } else {
+      bindError.value = t('order.errorServer')
+    }
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response) {
+      const status = err.response.status
+      const code = err.response.data?.code
+
+      if (status === 404) {
+        // Same "invalid link" state as the initial GET /view 404 — the
+        // share token itself is no longer valid.
+        summary.value = null
+        error.value = t('order.errorInvalidLink')
+      } else if (code === 'INVALID_LINE_TOKEN') {
+        bindError.value = t('order.bind.errors.invalidLineToken')
+      } else if (code === 'LINE_ALREADY_BOUND') {
+        bindError.value = t('order.bind.errors.lineAlreadyBound')
+      } else if (code === 'CUSTOMER_ALREADY_BOUND') {
+        bindError.value = t('order.bind.errors.customerAlreadyBound')
+      } else {
+        bindError.value = t('order.errorServer')
+      }
+    } else {
+      bindError.value = t('order.errorServer')
+    }
+  } finally {
+    binding.value = false
+  }
+}
+
+// Silently completes binding when we already know the customer is logged
+// into LINE, so they don't have to tap the button at all. Falls back to
+// showing the manual button whenever login state can't be confirmed —
+// see docs/superpowers/specs/2026-07-25-order-auto-bind-design.md.
+const attemptAutoBind = async () => {
+  if (!summary.value || summary.value.isBound) return
+  if (!liffReady.value || !liff.isLoggedIn()) return
+
+  autoBindInProgress.value = true
+  try {
+    const lineIdToken = liff.getIDToken()
+    const response = await axios.post('/api/public/orders/bind', {
+      t: token.value,
+      lineIdToken
+    })
+
+    if (response.data && response.data.success) {
+      summary.value.isBound = true
+    }
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response && err.response.status === 404) {
+      // Same "invalid link" state as the initial GET /view 404 — the
+      // share token itself is no longer valid.
+      summary.value = null
+      error.value = t('order.errorInvalidLink')
+    } else {
+      // Silent by design: a failed background attempt just falls back to
+      // showing the manual bind button, with no error copy.
+      console.error('Silent auto-bind failed:', err)
+    }
+  } finally {
+    autoBindInProgress.value = false
+  }
+}
+
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat(locale.value === 'en' ? 'en-US' : 'zh-TW', {
+    style: 'currency',
+    currency: 'TWD',
+    maximumFractionDigits: 0
+  }).format(amount)
+
+const formattedTotalAmount = computed(() =>
+  summary.value ? formatCurrency(summary.value.totalAmount) : ''
+)
+
+const formattedOrderDate = computed(() => {
+  if (!summary.value || !summary.value.orderDate) return ''
+  return new Date(summary.value.orderDate).toLocaleDateString(locale.value === 'en' ? 'en-US' : 'zh-TW')
+})
+
+onMounted(async () => {
+  await Promise.all([fetchOrderSummary(), initLiff()])
+  attemptAutoBind()
+})
+</script>
+
+<template>
+  <div class="min-h-screen bg-background flex flex-col relative">
+    <button
+      @click="toggleLocale"
+      class="absolute top-6 right-6 z-10 font-label-caps text-xs tracking-wider text-secondary hover:text-primary transition-colors border border-outline-variant/30 px-2 py-1 rounded"
+    >
+      {{ locale === 'en' ? '繁中' : 'EN' }}
+    </button>
+
+    <div class="flex justify-center pt-8 pb-4">
+      <img src="/favicon.png" alt="REAL YOU" class="w-10 h-10 rounded-xl" />
+    </div>
+
+    <!-- LOADING -->
+    <div v-if="loading" class="flex-grow flex flex-col items-center justify-center px-margin-mobile">
+      <div class="w-10 h-10 border-2 border-primary-container border-t-primary rounded-full animate-spin mb-6"></div>
+      <p class="font-data-mono text-label-caps text-secondary tracking-widest uppercase">
+        {{ $t('order.loading') }}
+      </p>
+    </div>
+
+    <!-- ERROR -->
+    <div v-else-if="error" class="flex-grow flex flex-col items-center justify-center text-center px-margin-mobile max-w-md mx-auto">
+      <span class="material-symbols-outlined text-primary text-[48px] mb-6">gpp_maybe</span>
+      <p class="font-body-md text-secondary mb-8">{{ error }}</p>
+      <button
+        v-if="isInLiffClient"
+        @click="closeLiffWindow"
+        class="bg-primary text-white px-8 py-3 font-label-caps text-label-caps tracking-widest hover:bg-primary-container transition-colors duration-300"
+      >
+        {{ $t('order.closeWindow') }}
+      </button>
+    </div>
+
+    <!-- SUMMARY -->
+    <div v-else-if="summary" class="flex-grow px-margin-mobile pb-16 max-w-lg mx-auto w-full">
+      <div class="bg-white border border-outline-variant/30 shadow-sm p-6 mb-8">
+        <p class="font-data-mono text-xs text-secondary tracking-widest uppercase mb-1">{{ summary.orderKindDisplay }}</p>
+        <h1 class="font-headline-sm text-lg text-on-surface mb-6">#{{ summary.orderNumber }}</h1>
+
+        <div class="space-y-0">
+          <div class="flex items-center justify-between py-4 border-b border-outline-variant/20">
+            <span class="font-label-caps text-xs text-secondary uppercase tracking-wider">{{ $t('order.summary.status') }}</span>
+            <OrderStatusBadge :status="summary.status" />
+          </div>
+          <div class="flex justify-between py-4 border-b border-outline-variant/20">
+            <span class="font-label-caps text-xs text-secondary uppercase tracking-wider">{{ $t('order.summary.orderDate') }}</span>
+            <span class="font-data-mono text-sm text-on-surface">{{ formattedOrderDate }}</span>
+          </div>
+          <div class="flex justify-between py-4 border-b border-outline-variant/20">
+            <span class="font-label-caps text-xs text-secondary uppercase tracking-wider">{{ $t('order.summary.customerName') }}</span>
+            <span class="font-title-lg text-sm text-on-surface">{{ summary.customerName }}</span>
+          </div>
+          <div class="flex justify-between py-4">
+            <span class="font-label-caps text-xs text-secondary uppercase tracking-wider">{{ $t('order.summary.totalAmount') }}</span>
+            <span class="font-data-mono text-sm text-on-surface">{{ formattedTotalAmount }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-8">
+        <h2 class="font-label-caps text-xs text-secondary uppercase tracking-wider mb-4">{{ $t('order.summary.itemsHeading') }}</h2>
+        <div class="space-y-3">
+          <div
+            v-for="(orderItem, index) in summary.items"
+            :key="index"
+            class="flex items-center gap-4 bg-surface-container-low p-4"
+          >
+            <div class="w-14 h-14 bg-surface-container overflow-hidden flex-shrink-0 flex items-center justify-center">
+              <img v-if="orderItem.imageUrl" :src="orderItem.imageUrl" :alt="orderItem.style" class="w-full h-full object-cover" />
+              <span v-else class="material-symbols-outlined text-secondary text-[24px]">inventory_2</span>
+            </div>
+            <div class="flex-grow">
+              <p class="font-title-lg text-sm text-on-surface">{{ orderItem.brand }}</p>
+              <p class="font-body-md text-xs text-secondary">{{ orderItem.style }}</p>
+            </div>
+            <p class="font-data-mono text-sm text-on-surface">{{ formatCurrency(orderItem.amount) }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- BIND SECTION -->
+      <div v-if="!summary.isBound && !autoBindInProgress" class="bg-white border border-outline-variant/30 shadow-sm p-6 text-center">
+        <p class="font-body-md text-sm text-secondary mb-5">{{ $t('order.bind.prompt') }}</p>
+        <p v-if="bindError" class="font-body-md text-xs text-primary mb-4">{{ bindError }}</p>
+        <button
+          class="w-full bg-primary text-white px-8 py-4 font-label-caps text-label-caps hover:bg-primary-container transition-colors duration-300 tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="binding"
+          @click="handleBind"
+        >
+          {{ binding ? $t('order.bind.submitting') : $t('order.bind.button') }}
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
