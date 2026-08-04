@@ -15,7 +15,7 @@ export default defineConfig({
     allowedHosts: ['.devtunnels.ms', '.ngrok-free.dev', '.ngrok-free.app'],
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:5100',
         changeOrigin: true,
       },
       // Mirrors nginx.conf's Linespider map + `/order` location: only LINE's
@@ -23,7 +23,7 @@ export default defineConfig({
       // order-share HTML; everyone else (including the real LIFF in-app
       // browser) falls through to bypass() and gets the normal SPA.
       '^/order$': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:5100',
         changeOrigin: true,
         bypass: (req) => {
           const userAgent = req.headers['user-agent'] || ''
@@ -34,7 +34,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/order/, '/api/public/orders/share'),
       },
       '^/product/.+/share$': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:5100',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/product\/(.+)\/share$/, '/api/public/inventory/$1/share'),
       }

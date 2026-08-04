@@ -70,7 +70,7 @@ const messages = {
       errorServer: 'Unable to load order details. Please try again later.',
       closeWindow: 'CLOSE',
       status: {
-        pending: 'Processing',
+        placed: 'Placed',
         completed: 'Completed',
         cancelled: 'Cancelled'
       },
@@ -91,6 +91,12 @@ const messages = {
           lineAlreadyBound: 'This LINE account is already bound to another customer. Please contact customer service for help.',
           customerAlreadyBound: 'This customer has already completed LINE binding. To switch accounts, please contact your sales representative.'
         }
+      },
+      session: {
+        errorIdentity: 'LINE identity verification failed. Please log in to LINE again.',
+        errorService: 'Service is temporarily unavailable. Please try again later.',
+        retry: 'RETRY',
+        bindRequired: 'This LINE account has not been bound yet. Please complete binding via your order link first.'
       }
     }
   },
@@ -163,7 +169,7 @@ const messages = {
       errorServer: '無法載入訂單資料，請稍後再試。',
       closeWindow: '關閉視窗',
       status: {
-        pending: '處理中',
+        placed: '已下單',
         completed: '已完成',
         cancelled: '已取消'
       },
@@ -184,6 +190,12 @@ const messages = {
           lineAlreadyBound: '此 LINE 帳號已綁定給另一位客戶，請聯絡客服協助處理。',
           customerAlreadyBound: '此客戶已完成過綁定，如需更換 LINE 帳號請聯絡業務/客服協助。'
         }
+      },
+      session: {
+        errorIdentity: 'LINE 身分驗證失敗，請重新登入 LINE。',
+        errorService: '服務暫時無法使用，請稍後再試。',
+        retry: '重試',
+        bindRequired: '此 LINE 帳號尚未完成綁定，請先透過訂單連結完成綁定。'
       }
     }
   }
