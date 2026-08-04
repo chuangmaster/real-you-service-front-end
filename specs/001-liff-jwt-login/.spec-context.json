@@ -1,0 +1,16 @@
+{
+  "workflow": "speckit",
+  "specName": "LIFF 登入取得後端 JWT 授權",
+  "branch": "main",
+  "currentStep": "specify",
+  "status": "specified",
+  "history": [
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-08-04T06:09:44.862Z"
+    }
+  ]
+}
