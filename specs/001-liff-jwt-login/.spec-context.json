@@ -2,8 +2,8 @@
   "workflow": "speckit",
   "specName": "LIFF 登入取得後端 JWT 授權",
   "branch": "main",
-  "currentStep": "specify",
-  "status": "specified",
+  "currentStep": "tasks",
+  "status": "ready-to-implement",
   "history": [
     {
       "step": "specify",
@@ -11,6 +11,28 @@
       "kind": "start",
       "by": "extension",
       "at": "2026-08-04T06:09:44.862Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-04T09:50:47.727Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-08-04T17:56:58.226Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-04T18:02:29.031Z"
     }
-  ]
+  ],
+  "telemetryInstanceId": "df400677-5e72-46be-8b2c-d36657652841"
 }
