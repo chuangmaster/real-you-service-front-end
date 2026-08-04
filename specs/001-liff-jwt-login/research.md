@@ -64,6 +64,6 @@
 
 ## 7. i18n 文案新增慣例
 
-**Decision**: 沿用 `src/i18n.ts` 現有的 `order.*` 命名風格，在同一個檔案內新增 `order.session.*` 命名空間（例如 `order.session.errorIdentity`、`order.session.errorService`、`order.session.retry`），`en` 與 `zh-TW` 都補齊。若未來有其他 LIFF 頁面重用這組文案，屆時再評估是否要改成更通用的頂層命名空間（例如 `session.*`）——目前只有 `OrderView.vue` 一個消費端，不需要提前抽象命名空間。
+**Decision**: 沿用 `src/i18n.ts` 現有的 `order.*` 命名風格，在同一個檔案內新增 `order.session.*` 命名空間，共 4 個 key：`order.session.errorIdentity`（身分驗證失敗等一般身分類錯誤）、`order.session.errorService`（服務暫時無法使用，含 LIFF 初始化失敗，見 spec.md Edge Cases）、`order.session.retry`（重試按鈕文案）、`order.session.bindRequired`（`LINE_NOT_BOUND` 專用，引導客戶先完成訂單綁定，對應 FR-007），`en` 與 `zh-TW` 都補齊。`bindRequired` 之所以獨立於 `errorIdentity`，是因為 User Story 3 情境 2 要求的引導文案（導向補綁定）與一般身分驗證失敗（導向重新登入）在使用者行動上明顯不同，共用同一句文案會誤導客戶。若未來有其他 LIFF 頁面重用這組文案，屆時再評估是否要改成更通用的頂層命名空間（例如 `session.*`）——目前只有 `OrderView.vue` 一個消費端，不需要提前抽象命名空間。
 
 **Rationale**: 符合 `CLAUDE.md` 的既有慣例（單一 `i18n.ts` 檔案、無外部翻譯載入機制），也符合 YAGNI（沒有第二個消費端之前不需要決定通用命名）。
