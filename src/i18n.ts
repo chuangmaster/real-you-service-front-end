@@ -91,6 +91,12 @@ const messages = {
           lineAlreadyBound: 'This LINE account is already bound to another customer. Please contact customer service for help.',
           customerAlreadyBound: 'This customer has already completed LINE binding. To switch accounts, please contact your sales representative.'
         }
+      },
+      session: {
+        errorIdentity: 'LINE identity verification failed. Please log in to LINE again.',
+        errorService: 'Service is temporarily unavailable. Please try again later.',
+        retry: 'RETRY',
+        bindRequired: 'This LINE account has not been bound yet. Please complete binding via your order link first.'
       }
     }
   },
@@ -184,6 +190,12 @@ const messages = {
           lineAlreadyBound: '此 LINE 帳號已綁定給另一位客戶，請聯絡客服協助處理。',
           customerAlreadyBound: '此客戶已完成過綁定，如需更換 LINE 帳號請聯絡業務/客服協助。'
         }
+      },
+      session: {
+        errorIdentity: 'LINE 身分驗證失敗，請重新登入 LINE。',
+        errorService: '服務暫時無法使用，請稍後再試。',
+        retry: '重試',
+        bindRequired: '此 LINE 帳號尚未完成綁定，請先透過訂單連結完成綁定。'
       }
     }
   }

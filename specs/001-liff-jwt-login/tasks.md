@@ -34,7 +34,7 @@ description: "Task list for LIFF 登入取得後端 JWT 授權"
 
 **Purpose**: 建立本 repo 第一個 composable 的檔案骨架
 
-- [ ] T001 建立 `src/composables/` 目錄與 `useCustomerSession.ts` 檔案骨架（匯出一個目前為空殼的 `useCustomerSession()` function），路徑 `src/composables/useCustomerSession.ts`
+- [X] T001 建立 `src/composables/` 目錄與 `useCustomerSession.ts` 檔案骨架（匯出一個目前為空殼的 `useCustomerSession()` function），路徑 `src/composables/useCustomerSession.ts`
 
 ---
 
@@ -44,11 +44,11 @@ description: "Task list for LIFF 登入取得後端 JWT 授權"
 
 **⚠️ CRITICAL**: 本階段完成前，不得開始任何 user story 的實作
 
-- [ ] T002 依 [data-model.md](./data-model.md) 在 `src/composables/useCustomerSession.ts` 定義 `CustomerSession`（`token`、`expiresAt`）、`LineIdentityCredential`（`lineIdToken`）、`ExchangeError`（`kind`、`code`）TypeScript 型別
-- [ ] T003 依 [research.md §3](./research.md#3-sessionstorage-的鍵值設計與多分頁行為) 在 `src/composables/useCustomerSession.ts` 實作 `sessionStorage` 讀寫/清除輔助函式（單一 key `realyou.customerSession`，JSON 內容 `{ token, expiresAt }`；讀取時若 `expiresAt` 已過期視為不存在，對應 [data-model.md](./data-model.md) 的驗證規則）
-- [ ] T004 依 [research.md §4](./research.md#4-liff-id-token-的取得與有效性) 在 `src/composables/useCustomerSession.ts` 實作模組層級的 LIFF 初始化包裝（`initPromise` 確保 `liff.init()` 只執行一次）與 `isLiffLoggedIn` ref
-- [ ] T005 依 [research.md §2](./research.md#2-授權憑證的請求附帶方式) 在 `src/composables/useCustomerSession.ts` 建立專屬的 axios 實例，透過 request interceptor 在有未過期 session 時自動附加 `Authorization: Bearer <token>` header（不得影響全域 `axios` 預設實例）
-- [ ] T006 依 [research.md §5](./research.md#5-換發失敗的分類判斷邏輯對應-fr-006) 與 [contracts/customer-session-exchange.md](./contracts/customer-session-exchange.md) 在 `src/composables/useCustomerSession.ts` 實作純函式 `classifyExchangeError(err)`，依 HTTP 狀態碼與 `code` 欄位分類為 `identity` 或 `service`
+- [X] T002 依 [data-model.md](./data-model.md) 在 `src/composables/useCustomerSession.ts` 定義 `CustomerSession`（`token`、`expiresAt`）、`LineIdentityCredential`（`lineIdToken`）、`ExchangeError`（`kind`、`code`）TypeScript 型別
+- [X] T003 依 [research.md §3](./research.md#3-sessionstorage-的鍵值設計與多分頁行為) 在 `src/composables/useCustomerSession.ts` 實作 `sessionStorage` 讀寫/清除輔助函式（單一 key `realyou.customerSession`，JSON 內容 `{ token, expiresAt }`；讀取時若 `expiresAt` 已過期視為不存在，對應 [data-model.md](./data-model.md) 的驗證規則）
+- [X] T004 依 [research.md §4](./research.md#4-liff-id-token-的取得與有效性) 在 `src/composables/useCustomerSession.ts` 實作模組層級的 LIFF 初始化包裝（`initPromise` 確保 `liff.init()` 只執行一次）與 `isLiffLoggedIn` ref
+- [X] T005 依 [research.md §2](./research.md#2-授權憑證的請求附帶方式) 在 `src/composables/useCustomerSession.ts` 建立專屬的 axios 實例，透過 request interceptor 在有未過期 session 時自動附加 `Authorization: Bearer <token>` header（不得影響全域 `axios` 預設實例）
+- [X] T006 依 [research.md §5](./research.md#5-換發失敗的分類判斷邏輯對應-fr-006) 與 [contracts/customer-session-exchange.md](./contracts/customer-session-exchange.md) 在 `src/composables/useCustomerSession.ts` 實作純函式 `classifyExchangeError(err)`，依 HTTP 狀態碼與 `code` 欄位分類為 `identity` 或 `service`
 
 **Checkpoint**: composable 的共用建構區塊就緒，可開始疊加各 user story 的對外行為
 
@@ -62,10 +62,10 @@ description: "Task list for LIFF 登入取得後端 JWT 授權"
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] 依 [contracts/customer-session-exchange.md](./contracts/customer-session-exchange.md) 在 `src/composables/useCustomerSession.ts` 實作 `ensureSession()`：優先沿用 T003 儲存的有效 session；否則以 `liff.getIDToken()` 取得的 `lineIdToken` 呼叫 `POST /api/public/customers/session`，成功後換算 `expiresAt` 並寫入 `sessionStorage`，回傳 token 或 `null`（FR-001、FR-003、FR-004）。**註**：此處提前納入「沿用既有 session」屬於必要的基礎行為（無此檢查則每次呼叫都會重新換發），User Story 2 的獨立測試聚焦在更進階的行為——過期後自動無感重新換發（T013）與同時呼叫的防抖（T012），而非「是否沿用」本身
-- [ ] T008 [US1] 依 [research.md §6](./research.md#6-composable-對外介面設計) 在 `src/composables/useCustomerSession.ts` 實作 `login()`：包裝 `liff.login({ redirectUri: window.location.href })`，僅由頁面主動呼叫，composable 初始化階段不自動呼叫（FR-002）
-- [ ] T009 [US1] 在 `src/composables/useCustomerSession.ts` 匯出 `useCustomerSession()` 對外介面：`sessionReady`、`isLiffLoggedIn`、`exchangeError`、`ensureSession()`、`login()`（研究決策見 [research.md §6](./research.md#6-composable-對外介面設計)）
-- [ ] T010 [US1] 在 `src/views/OrderView.vue` 改用 `useCustomerSession`：以 composable 的 `isLiffLoggedIn`/`login()` 取代原本直接呼叫的 `liff.init()`/`liff.isLoggedIn()`/`liff.login()`，並在既有 `onMounted`／`attemptAutoBind` 流程中呼叫 `ensureSession()`，讓授權換發在背景無感完成（`plan.md` Project Structure 的 Structure Decision；FR-001~FR-004）
+- [X] T007 [US1] 依 [contracts/customer-session-exchange.md](./contracts/customer-session-exchange.md) 在 `src/composables/useCustomerSession.ts` 實作 `ensureSession()`：優先沿用 T003 儲存的有效 session；否則以 `liff.getIDToken()` 取得的 `lineIdToken` 呼叫 `POST /api/public/customers/session`，成功後換算 `expiresAt` 並寫入 `sessionStorage`，回傳 token 或 `null`（FR-001、FR-003、FR-004）。**註**：此處提前納入「沿用既有 session」屬於必要的基礎行為（無此檢查則每次呼叫都會重新換發），User Story 2 的獨立測試聚焦在更進階的行為——過期後自動無感重新換發（T013）與同時呼叫的防抖（T012），而非「是否沿用」本身
+- [X] T008 [US1] 依 [research.md §6](./research.md#6-composable-對外介面設計) 在 `src/composables/useCustomerSession.ts` 實作 `login()`：包裝 `liff.login({ redirectUri: window.location.href })`，僅由頁面主動呼叫，composable 初始化階段不自動呼叫（FR-002）
+- [X] T009 [US1] 在 `src/composables/useCustomerSession.ts` 匯出 `useCustomerSession()` 對外介面：`sessionReady`、`isLiffLoggedIn`、`exchangeError`、`ensureSession()`、`login()`（研究決策見 [research.md §6](./research.md#6-composable-對外介面設計)）
+- [X] T010 [US1] 在 `src/views/OrderView.vue` 改用 `useCustomerSession`：以 composable 的 `isLiffLoggedIn`/`login()` 取代原本直接呼叫的 `liff.init()`/`liff.isLoggedIn()`/`liff.login()`，並在既有 `onMounted`／`attemptAutoBind` 流程中呼叫 `ensureSession()`，讓授權換發在背景無感完成（`plan.md` Project Structure 的 Structure Decision；FR-001~FR-004）
 - [ ] T011 [US1] 依 [quickstart.md](./quickstart.md) 情境 1、情境 2 手動驗證：已登入且已綁定時 3 秒內背景完成換發且無任何提示；未登入時不強制導頁，點擊登入按鈕後導轉並自動接續換發
 
 **Checkpoint**: User Story 1 應可獨立運作並通過驗證（MVP）
@@ -80,8 +80,8 @@ description: "Task list for LIFF 登入取得後端 JWT 授權"
 
 ### Implementation for User Story 2
 
-- [ ] T012 [US2] 在 `src/composables/useCustomerSession.ts` 為 `ensureSession()` 加上共用的進行中 promise（比照 T004 的 `initPromise` 模式），避免同一頁面內多處同時呼叫時重複觸發換發請求
-- [ ] T013 [US2] 確認並視需要調整 `src/composables/useCustomerSession.ts` 的 `ensureSession()`：當儲存的 session 依 T003 判定已過期時（data-model.md 生命週期），在客戶 LINE 登入狀態仍有效的前提下直接觸發重新換發，不呼叫 `login()`（FR-005）
+- [X] T012 [US2] 在 `src/composables/useCustomerSession.ts` 為 `ensureSession()` 加上共用的進行中 promise（比照 T004 的 `initPromise` 模式），避免同一頁面內多處同時呼叫時重複觸發換發請求
+- [X] T013 [US2] 確認並視需要調整 `src/composables/useCustomerSession.ts` 的 `ensureSession()`：當儲存的 session 依 T003 判定已過期時（data-model.md 生命週期），在客戶 LINE 登入狀態仍有效的前提下直接觸發重新換發，不呼叫 `login()`（FR-005）
 - [ ] T014 [US2] 依 [quickstart.md](./quickstart.md) 情境 3、情境 4 手動驗證：有效期內重新整理頁面不再發出新的換發請求（或即使發出也是背景無感）；手動竄改 `expiresAt` 模擬過期後，重新整理頁面能自動無感換發新憑證
 
 **Checkpoint**: User Story 1、2 應可同時獨立運作
@@ -96,11 +96,11 @@ description: "Task list for LIFF 登入取得後端 JWT 授權"
 
 ### Implementation for User Story 3
 
-- [ ] T015 [P] [US3] 依 [research.md §7](./research.md#7-i18n-文案新增慣例) 在 `src/i18n.ts` 新增 `order.session.*` 命名空間文案（`errorIdentity`、`errorService`、`retry`、`bindRequired`），`en` 與 `zh-TW` 都補齊
-- [ ] T016 [US3] 在 `src/composables/useCustomerSession.ts` 的 `ensureSession()` 換發失敗時，呼叫 T006 的 `classifyExchangeError()` 並寫入 `exchangeError` ref，供頁面讀取分類結果（FR-006）
-- [ ] T017 [US3] 在 `src/views/OrderView.vue` 讀取 composable 的 `exchangeError`，依 `kind` 分流呈現：身分類僅顯示引導文案，服務類額外顯示「重試」按鈕，點擊後重新呼叫 `ensureSession()`（FR-006）
-- [ ] T018 [US3] 在 `src/views/OrderView.vue` 針對 `exchangeError.code === 'LINE_NOT_BOUND'` 顯示 T015 新增的 `order.session.bindRequired` 文案，引導客戶先透過訂單分享連結完成綁定（FR-007）
-- [ ] T019 [US3] 在 `src/composables/useCustomerSession.ts` 的 LIFF 初始化流程（T004）失敗時，直接寫入 `exchangeError = { kind: 'service' }`（不經過 `classifyExchangeError`，因為沒有 HTTP 回應可供分類），比照 FR-006 服務類錯誤呈現方式（對應 spec.md Edge Cases 第 1 條的決議）
+- [X] T015 [P] [US3] 依 [research.md §7](./research.md#7-i18n-文案新增慣例) 在 `src/i18n.ts` 新增 `order.session.*` 命名空間文案（`errorIdentity`、`errorService`、`retry`、`bindRequired`），`en` 與 `zh-TW` 都補齊
+- [X] T016 [US3] 在 `src/composables/useCustomerSession.ts` 的 `ensureSession()` 換發失敗時，呼叫 T006 的 `classifyExchangeError()` 並寫入 `exchangeError` ref，供頁面讀取分類結果（FR-006）
+- [X] T017 [US3] 在 `src/views/OrderView.vue` 讀取 composable 的 `exchangeError`，依 `kind` 分流呈現：身分類僅顯示引導文案，服務類額外顯示「重試」按鈕，點擊後重新呼叫 `ensureSession()`（FR-006）
+- [X] T018 [US3] 在 `src/views/OrderView.vue` 針對 `exchangeError.code === 'LINE_NOT_BOUND'` 顯示 T015 新增的 `order.session.bindRequired` 文案，引導客戶先透過訂單分享連結完成綁定（FR-007）
+- [X] T019 [US3] 在 `src/composables/useCustomerSession.ts` 的 LIFF 初始化流程（T004）失敗時，直接寫入 `exchangeError = { kind: 'service' }`（不經過 `classifyExchangeError`，因為沒有 HTTP 回應可供分類），比照 FR-006 服務類錯誤呈現方式（對應 spec.md Edge Cases 第 1 條的決議）
 - [ ] T020 [US3] 依 [quickstart.md](./quickstart.md) 情境 5、6、7 手動驗證：身分驗證失敗顯示身分類錯誤且無重試按鈕；未綁定帳號顯示補綁定引導；後端服務錯誤顯示服務類錯誤與重試按鈕，重試後可成功換發；另補測 `liff.init()` 失敗時同樣顯示服務類錯誤與重試按鈕（T019）
 
 **Checkpoint**: User Story 1、2、3 應皆可獨立運作
@@ -111,7 +111,7 @@ description: "Task list for LIFF 登入取得後端 JWT 授權"
 
 **Purpose**: 跨 story 的收尾與最終驗收
 
-- [ ] T021 [P] 檢視 `src/composables/useCustomerSession.ts` 是否維持與頁面無關（不得耦合 `OrderView.vue` 特有邏輯），確保未來新增的 LIFF 頁面可直接重用（FR-008）
+- [X] T021 [P] 檢視 `src/composables/useCustomerSession.ts` 是否維持與頁面無關（不得耦合 `OrderView.vue` 特有邏輯），確保未來新增的 LIFF 頁面可直接重用（FR-008）
 - [ ] T022 依 [quickstart.md](./quickstart.md) 完整走過全部 7 個情境做最終回歸驗證，確認 [spec.md](./spec.md) 的 SC-001～SC-004 皆滿足
 
 ---

@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import liff from '@line/liff'
 import OrderStatusBadge from '../components/OrderStatusBadge.vue'
+import { useCustomerSession } from '../composables/useCustomerSession'
 
 interface OrderItem {
   brand: string
@@ -78,23 +79,11 @@ const fetchOrderSummary = async () => {
   }
 }
 
-// LIFF state — initialized on mount, in parallel with the summary fetch.
-// A failure here doesn't block viewing the order summary; it only means
-// any bind attempt (automatic or manual) later falls back to showing the
-// manual button.
-const liffReady = ref(false)
+// LIFF 登入狀態與客戶授權憑證換發，皆改由共用的 useCustomerSession 處理
+// （見 specs/001-liff-jwt-login/）。ensureSession() 內部已包含 liff.init()，
+// 這裡不再自行呼叫，避免重複初始化。
+const { isLiffLoggedIn, exchangeError, ensureSession, login } = useCustomerSession()
 const isInLiffClient = ref(false)
-
-const initLiff = async () => {
-  try {
-    await liff.init({ liffId: import.meta.env.VITE_LIFF_ID })
-    liffReady.value = true
-    isInLiffClient.value = liff.isInClient()
-  } catch (err) {
-    console.error('Failed to initialize LIFF:', err)
-    liffReady.value = false
-  }
-}
 
 const closeLiffWindow = () => {
   liff.closeWindow()
@@ -110,17 +99,17 @@ const handleBind = async () => {
 
   bindError.value = ''
 
-  if (!liffReady.value) {
+  if (exchangeError.value?.kind === 'service') {
     bindError.value = t('order.bind.errorLiffUnavailable')
     return
   }
 
   binding.value = true
   try {
-    if (!liff.isLoggedIn()) {
-      // Redirects the whole page to LINE Login and back to this same URL
-      // (including the `t` query param); execution does not continue past this call.
-      liff.login({ redirectUri: window.location.href })
+    if (!isLiffLoggedIn.value) {
+      // 導向整頁的 LINE 登入，登入完成後導回同一個 URL（含 `t` query param）；
+      // 執行不會繼續往下走。
+      login()
       return
     }
 
@@ -168,7 +157,7 @@ const handleBind = async () => {
 // see docs/superpowers/specs/2026-07-25-order-auto-bind-design.md.
 const attemptAutoBind = async () => {
   if (!summary.value || summary.value.isBound) return
-  if (!liffReady.value || !liff.isLoggedIn()) return
+  if (!isLiffLoggedIn.value) return
 
   autoBindInProgress.value = true
   try {
@@ -214,7 +203,12 @@ const formattedOrderDate = computed(() => {
 })
 
 onMounted(async () => {
-  await Promise.all([fetchOrderSummary(), initLiff()])
+  await Promise.all([fetchOrderSummary(), ensureSession()])
+  try {
+    isInLiffClient.value = liff.isInClient()
+  } catch {
+    isInLiffClient.value = false
+  }
   attemptAutoBind()
 })
 </script>
@@ -310,6 +304,26 @@ onMounted(async () => {
           @click="handleBind"
         >
           {{ binding ? $t('order.bind.submitting') : $t('order.bind.button') }}
+        </button>
+      </div>
+
+      <!-- CUSTOMER SESSION EXCHANGE ERROR（客戶授權憑證換發失敗，FR-006） -->
+      <div v-if="exchangeError" class="bg-white border border-outline-variant/30 shadow-sm p-6 text-center mt-4">
+        <p class="font-body-md text-sm text-primary mb-4">
+          {{
+            exchangeError.code === 'LINE_NOT_BOUND'
+              ? $t('order.session.bindRequired')
+              : exchangeError.kind === 'identity'
+                ? $t('order.session.errorIdentity')
+                : $t('order.session.errorService')
+          }}
+        </p>
+        <button
+          v-if="exchangeError.kind === 'service'"
+          class="w-full bg-primary text-white px-8 py-4 font-label-caps text-label-caps hover:bg-primary-container transition-colors duration-300 tracking-widest"
+          @click="ensureSession"
+        >
+          {{ $t('order.session.retry') }}
         </button>
       </div>
     </div>
