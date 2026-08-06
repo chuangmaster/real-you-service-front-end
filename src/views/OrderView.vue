@@ -5,7 +5,9 @@ import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import liff from '@line/liff'
 import OrderStatusBadge from '../components/OrderStatusBadge.vue'
-import { useCustomerSession } from '../composables/useCustomerSession'
+import OrderRecipientSection from '../components/OrderRecipientSection.vue'
+import { sessionHttp, useCustomerSession } from '../composables/useCustomerSession'
+import type { SalesOrderDeliveryDetail } from '../types/orderDelivery'
 
 interface OrderItem {
   brand: string
@@ -15,6 +17,8 @@ interface OrderItem {
 }
 
 interface OrderSummary {
+  orderId: string
+  orderKind: 'Service' | 'Sales'
   orderNumber: string
   orderKindDisplay: string
   status: string
@@ -82,7 +86,7 @@ const fetchOrderSummary = async () => {
 // LIFF 登入狀態與客戶授權憑證換發，皆改由共用的 useCustomerSession 處理
 // （見 specs/001-liff-jwt-login/）。ensureSession() 內部已包含 liff.init()，
 // 這裡不再自行呼叫，避免重複初始化。
-const { isLiffLoggedIn, exchangeError, ensureSession, login } = useCustomerSession()
+const { sessionReady, isLiffLoggedIn, exchangeError, ensureSession, login } = useCustomerSession()
 const isInLiffClient = ref(false)
 
 const closeLiffWindow = () => {
@@ -93,6 +97,27 @@ const closeLiffWindow = () => {
 const binding = ref(false)
 const bindError = ref('')
 const autoBindInProgress = ref(false)
+
+// Recipient/delivery detail state — only fetched for bound Sales orders once
+// the customer has a valid session JWT. Silent-failure by design, same as
+// attemptAutoBind's non-404 failures: the section just doesn't appear.
+// See docs/superpowers/specs/2026-08-06-order-recipient-delivery-design.md.
+const deliveryDetail = ref<SalesOrderDeliveryDetail | null>(null)
+
+const maybeFetchDeliveryDetail = async () => {
+  if (!summary.value) return
+  if (summary.value.orderKind !== 'Sales') return
+  if (!summary.value.isBound || !sessionReady.value) return
+
+  try {
+    const response = await sessionHttp.get(`/api/public/orders/sales/${summary.value.orderId}`)
+    if (response.data && response.data.success) {
+      deliveryDetail.value = response.data.data as SalesOrderDeliveryDetail
+    }
+  } catch (err) {
+    console.error('Failed to load delivery detail:', err)
+  }
+}
 
 const handleBind = async () => {
   if (binding.value || !summary.value) return
@@ -121,6 +146,12 @@ const handleBind = async () => {
 
     if (response.data && response.data.success) {
       summary.value.isBound = true
+      // 綁定前的 ensureSession() 很可能因客戶當時尚未綁定而以 LINE_NOT_BOUND
+      // 失敗、sessionReady 停留在 false；綁定成功後客戶已可換發憑證，
+      // 需重新呼叫一次才能讓 maybeFetchDeliveryDetail() 真正抓到資料。
+      ensureSession()
+        .then(() => maybeFetchDeliveryDetail())
+        .catch((err) => console.error('Failed to refresh session after bind:', err))
     } else {
       bindError.value = t('order.errorServer')
     }
@@ -169,6 +200,11 @@ const attemptAutoBind = async () => {
 
     if (response.data && response.data.success) {
       summary.value.isBound = true
+      // 理由同 handleBind：綁定前的 ensureSession() 很可能因尚未綁定而失敗，
+      // 這裡需重新呼叫一次才能讓 maybeFetchDeliveryDetail() 真正抓到資料。
+      ensureSession()
+        .then(() => maybeFetchDeliveryDetail())
+        .catch((err) => console.error('Failed to refresh session after bind:', err))
     }
   } catch (err) {
     if (axios.isAxiosError(err) && err.response && err.response.status === 404) {
@@ -210,6 +246,7 @@ onMounted(async () => {
     isInLiffClient.value = false
   }
   attemptAutoBind()
+  maybeFetchDeliveryDetail()
 })
 </script>
 
@@ -293,6 +330,13 @@ onMounted(async () => {
           </div>
         </div>
       </div>
+
+      <OrderRecipientSection
+        v-if="deliveryDetail"
+        :detail="deliveryDetail"
+        :order-id="summary.orderId"
+        @updated="deliveryDetail = $event"
+      />
 
       <!-- BIND SECTION -->
       <div v-if="!summary.isBound && !autoBindInProgress" class="bg-white border border-outline-variant/30 shadow-sm p-6 text-center">

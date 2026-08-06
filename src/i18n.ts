@@ -97,6 +97,34 @@ const messages = {
         errorService: 'Service is temporarily unavailable. Please try again later.',
         retry: 'RETRY',
         bindRequired: 'This LINE account has not been bound yet. Please complete binding via your order link first.'
+      },
+      recipient: {
+        title: 'Recipient Information',
+        methods: {
+          HOME_DELIVERY: 'Home Delivery',
+          STORE_PICKUP: 'Convenience Store Pickup',
+          PICKUP: 'In-Store Pickup'
+        },
+        fields: {
+          recipientName: 'Recipient Name',
+          recipientPhone: 'Recipient Phone',
+          recipientAddress: 'Recipient Address',
+          storeInfo: 'Store Info',
+          location: 'Pickup Location'
+        },
+        editButton: 'EDIT',
+        saveButton: 'SAVE',
+        cancelButton: 'CANCEL',
+        saving: 'SAVING...',
+        errors: {
+          versionConflict: 'This information was just updated. Please review the latest details and submit again.',
+          notEditable: 'This order can no longer have its recipient information changed.',
+          invalidInfo: 'Please make sure all recipient information is filled in.',
+          generic: 'Something went wrong. Please try again later.'
+        },
+        validation: {
+          required: 'This field is required.'
+        }
       }
     }
   },
@@ -196,6 +224,34 @@ const messages = {
         errorService: '服務暫時無法使用，請稍後再試。',
         retry: '重試',
         bindRequired: '此 LINE 帳號尚未完成綁定，請先透過訂單連結完成綁定。'
+      },
+      recipient: {
+        title: '收件資訊',
+        methods: {
+          HOME_DELIVERY: '宅配',
+          STORE_PICKUP: '超商取貨',
+          PICKUP: '門市自取'
+        },
+        fields: {
+          recipientName: '收件人姓名',
+          recipientPhone: '收件人電話',
+          recipientAddress: '收件地址',
+          storeInfo: '超商門市資訊',
+          location: '取貨地點'
+        },
+        editButton: '編輯',
+        saveButton: '儲存',
+        cancelButton: '取消',
+        saving: '儲存中...',
+        errors: {
+          versionConflict: '資料已被更新，請重新確認後再提交。',
+          notEditable: '此訂單目前狀態已無法修改收件資訊。',
+          invalidInfo: '請確認收件資訊填寫完整。',
+          generic: '發生錯誤，請稍候再試。'
+        },
+        validation: {
+          required: '此欄位為必填。'
+        }
       }
     }
   }
