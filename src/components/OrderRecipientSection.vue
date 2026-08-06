@@ -141,34 +141,44 @@ function clearFieldErrors() {
   Object.keys(fieldErrors).forEach((key) => delete fieldErrors[key])
 }
 
-function startEditing() {
-  formError.value = ''
-  clearFieldErrors()
-  // 進編輯模式就先抓門市清單，這樣使用者切到「超商取貨」分頁時清單通常已經
-  // 載好；loadStoreOptions() 內部有 idle/loading/loaded 狀態擋重複呼叫。
-  void loadStoreOptions()
-
-  const method = props.detail.deliveryMethod ?? 'HOME_DELIVERY'
-  formMethod.value = method
+// 把訂單目前實際存的收件資訊，載回對應方式的表單緩衝區。只有在 method
+// 等於訂單原本的 deliveryMethod 時才有原始資料可以載，回傳 true 代表載入
+// 成功；其餘情況（method 是使用者臨時切過去、訂單原本不是這個方式）回傳
+// false，呼叫端應自行決定要不要清空欄位。
+function loadOriginalValuesFor(method: DeliveryMethod): boolean {
+  if (props.detail.deliveryMethod !== method || !props.detail.deliveryInfo) return false
   const info = props.detail.deliveryInfo
 
-  if (method === 'HOME_DELIVERY' && info) {
+  if (method === 'HOME_DELIVERY') {
     const d = info as HomeDeliveryInfo
     homeDeliveryForm.recipientName = d.recipientName
     homeDeliveryForm.recipientPhone = d.recipientPhone
     homeDeliveryForm.recipientAddress = d.recipientAddress
   }
-  if (method === 'STORE_PICKUP' && info) {
+  if (method === 'STORE_PICKUP') {
     const d = info as StorePickupInfo
     storePickupForm.storeInfo = d.storeInfo
     storePickupForm.recipientName = d.recipientName
     storePickupForm.recipientPhone = d.recipientPhone
   }
-  if (method === 'PICKUP' && info) {
+  if (method === 'PICKUP') {
     const d = info as PickupInfo
     pickupForm.location = d.location
     pickupTimeOnLoad = d.pickupTime ?? null
   }
+  return true
+}
+
+function startEditing() {
+  formError.value = ''
+  clearFieldErrors()
+  // 進編輯模式就先抓門市清單，這樣使用者切到「門市自取」分頁時清單通常已經
+  // 載好；loadStoreOptions() 內部有 idle/loading/loaded 狀態擋重複呼叫。
+  void loadStoreOptions()
+
+  const method = props.detail.deliveryMethod ?? 'HOME_DELIVERY'
+  formMethod.value = method
+  loadOriginalValuesFor(method)
 
   editing.value = true
 }
@@ -178,10 +188,17 @@ function cancelEditing() {
   formError.value = ''
 }
 
-// 編輯中切換收件方式時，清空新方式底下的欄位——不嘗試在不同方式間映射欄位值。
+// 編輯中切換收件方式：若切回訂單原本的收件方式，把原始資料重新載回表單——
+// 使用者只是點了別的分頁看一眼、再切回來，不該發現原本已存的資料被清空
+// 掉了（原本這裡不分青紅皂白一律清空，導致「切到其他分類後，原始門市不會
+// 出現在選單預設選擇上」）。若切到的是跟訂單原本不同的方式，才清空該方式
+// 底下的欄位——不嘗試在不同方式間映射欄位值。
 function selectMethod(method: DeliveryMethod) {
   if (formMethod.value === method) return
   formMethod.value = method
+
+  if (loadOriginalValuesFor(method)) return
+
   if (method === 'HOME_DELIVERY') {
     homeDeliveryForm.recipientName = ''
     homeDeliveryForm.recipientPhone = ''

@@ -243,6 +243,12 @@ interface SalesOrderDeliveryDetail {
 - `storeSelectOptions`：把既有（可能是舊資料裡不在門市清單內的自由文字）`pickupForm.location` 併入選項清單，避免使用者一打開編輯表單就看到下拉選單空白、實際上底層欄位是有值的。
 - 門市清單載入失敗時（`storeListState === 'error'`），退回原本的純文字輸入框並顯示提示文案（`order.recipient.storeLoadError`），確保 API 掛掉時使用者仍能手動輸入完成編輯，不會被下拉選單卡住。
 
+### 第四輪：切換分頁再切回原本方式時，原始資料被誤清空
+
+`selectMethod()` 原本的設計是「切換收件方式時，清空新方式底下的欄位——不嘗試在不同方式間映射欄位值」，這條規則原意是處理使用者主動改用不同收件方式的情境。但它沒有分辨「切到一個訂單原本就不是這個方式」跟「切回訂單原本就是這個方式」——後者也被一併清空。實際場景：訂單原本的收件方式就是 `PICKUP`，编辑表單一開始正確帶出原始門市；使用者點開別的分頁看一眼（例如「超商取貨」），再點回「門市自取」，`selectMethod('PICKUP')` 判斷 `formMethod.value !== method`（此時是 `STORE_PICKUP`），於是把 `pickupForm.location` 清成空字串——下拉選單自然沒有任何選項會被選中，使用者回報「切到其他分類後，原始門市不會出現在選單預設選擇上」。
+
+修法：把 `startEditing()` 跟 `selectMethod()` 兩處載入原始資料的邏輯合併成 `loadOriginalValuesFor(method)`，判斷 `method` 是否等於 `props.detail.deliveryMethod`（訂單實際存的方式）。`selectMethod()` 先呼叫這個函式，能載到原始資料就直接回傳、不清空；載不到（使用者切到的方式本來就跟訂單原本不同）才維持原本的清空邏輯。三種收件方式共用同一套規則，不只是 `PICKUP`。
+
 ## 不在此規格範圍內
 
 - 服務單（收購/寄賣）收件資訊——後端資料模型本身不支援，非本次範圍。
