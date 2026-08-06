@@ -3,6 +3,7 @@ import { computed, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import { sessionHttp } from '../composables/useCustomerSession'
+import { parseSalesOrderDeliveryDetail } from '../types/orderDelivery'
 import type {
   DeliveryMethod,
   HomeDeliveryInfo,
@@ -203,7 +204,7 @@ async function refetchDetail(): Promise<void> {
   try {
     const response = await sessionHttp.get(`/api/public/orders/sales/${props.orderId}`)
     if (response.data && response.data.success) {
-      emit('updated', response.data.data as SalesOrderDeliveryDetail)
+      emit('updated', parseSalesOrderDeliveryDetail(response.data.data))
     }
   } catch (err) {
     console.error('Failed to refetch delivery detail:', err)

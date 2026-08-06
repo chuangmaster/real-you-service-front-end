@@ -30,3 +30,38 @@ export interface SalesOrderDeliveryDetail {
   deliveryInfo: DeliveryInfo | null
   version: number
 }
+
+// 後端 GET /api/public/orders/sales/{id} 與 PATCH .../delivery 回應的
+// data.deliveryInfo 實際上是一段 JSON 字串（資料庫存的是 JSON text，API
+// 沒有在這層反序列化），不是巢狀物件——直接當物件讀取欄位（例如
+// d.recipientName）會全部是 undefined，畫面看起來像欄位空白。
+// 呼叫端一律要透過這個函式把 GET/PATCH 回應的 data 轉成正確型別，不要直接
+// `as SalesOrderDeliveryDetail` 轉型了事。
+export function parseSalesOrderDeliveryDetail(raw: {
+  orderStatus: string
+  shippingStatus: string
+  deliveryMethod: DeliveryMethod | null
+  deliveryInfo: string | DeliveryInfo | null
+  version: number
+}): SalesOrderDeliveryDetail {
+  let deliveryInfo: DeliveryInfo | null = null
+
+  if (typeof raw.deliveryInfo === 'string') {
+    try {
+      deliveryInfo = JSON.parse(raw.deliveryInfo) as DeliveryInfo
+    } catch (err) {
+      console.error('Failed to parse deliveryInfo JSON string:', err)
+      deliveryInfo = null
+    }
+  } else {
+    deliveryInfo = raw.deliveryInfo
+  }
+
+  return {
+    orderStatus: raw.orderStatus,
+    shippingStatus: raw.shippingStatus,
+    deliveryMethod: raw.deliveryMethod,
+    deliveryInfo,
+    version: raw.version
+  }
+}

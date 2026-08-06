@@ -193,9 +193,28 @@ interface SalesOrderDeliveryDetail {
 
 ## 後續調整（2026-08-06）
 
-實際使用時發現：PATCH 成功（200）後直接信任回應 body 拼出畫面顯示的 `detail`，遇到回應內容與伺服器實際落地結果不一致的情況（例如 `deliveryInfo` 某個欄位在回應裡是舊值/空值）時，畫面會顯示錯誤的資訊，使用者得手動重新整理整個頁面才會看到正確內容——這對一個 SPA 來說不是使用者該承擔的成本。
+### 第一輪：儲存成功後改為重新 GET
 
-因此把成功分支也改成呼叫既有的 `refetchDetail()`（重新 `GET /api/public/orders/sales/{orderId}`），跟 409 `VERSION_CONFLICT` 分支使用同一套「不信任回應 body、以重新 GET 的結果為準」邏輯，不再直接用 `UpdateOrderDeliveryResponse` 拼本地 `detail`。多付出的成本是每次儲存成功都多一次 GET 請求，換來的是畫面永遠反映伺服器當下真正的資料，不需要使用者自行重新整理頁面。
+實際使用時發現：PATCH 成功（200）後直接信任回應 body 拼出畫面顯示的 `detail`，懷疑回應內容與伺服器實際落地結果不一致，導致畫面顯示錯誤的資訊、使用者得手動重新整理整個頁面才會看到正確內容。因此把成功分支也改成呼叫既有的 `refetchDetail()`（重新 `GET /api/public/orders/sales/{orderId}`），跟 409 `VERSION_CONFLICT` 分支使用同一套「不信任回應 body、以重新 GET 的結果為準」邏輯。
+
+### 第二輪：發現真正根因是 `deliveryInfo` 被序列化成字串
+
+第一輪的懷疑其實抓錯方向。實際拿到的 response 範例：
+
+```json
+{
+  "success": true,
+  "data": {
+    "deliveryMethod": "HOME_DELIVERY",
+    "deliveryInfo": "{\"recipientName\":\"莊承展\",\"recipientPhone\":\"0986053648\",\"recipientAddress\":\"中正北路430號6樓之10\"}",
+    "version": 5
+  }
+}
+```
+
+`data.deliveryInfo` 實際上是**一段 JSON 字串**，不是巢狀物件——推測是後端資料庫存的是 JSON text 欄位，API 沒有在回應這層反序列化。前端原本全程 `as SalesOrderDeliveryDetail` 直接轉型讀取 `d.recipientName`／`d.location` 等欄位，讀到的其實是字串上不存在的屬性、全部是 `undefined`，畫面才會看起來像欄位空白。這個問題在 GET 與 PATCH 兩個端點的回應都存在，跟第一輪「改用重新 GET」與否無關——不改成重新 GET 一樣會空白，改了也不會自動修好。
+
+新增 `parseSalesOrderDeliveryDetail()`（`src/types/orderDelivery.ts`），統一在 `deliveryInfo` 是字串時 `JSON.parse()` 轉成物件，兩個消費點（`OrderView.vue` 的 `maybeFetchDeliveryDetail()`、`OrderRecipientSection.vue` 的 `refetchDetail()`）都改用這個函式，不再直接 `as SalesOrderDeliveryDetail` 轉型了事。
 
 ## 不在此規格範圍內
 

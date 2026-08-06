@@ -7,7 +7,7 @@ import liff from '@line/liff'
 import OrderStatusBadge from '../components/OrderStatusBadge.vue'
 import OrderRecipientSection from '../components/OrderRecipientSection.vue'
 import { sessionHttp, useCustomerSession } from '../composables/useCustomerSession'
-import type { SalesOrderDeliveryDetail } from '../types/orderDelivery'
+import { parseSalesOrderDeliveryDetail, type SalesOrderDeliveryDetail } from '../types/orderDelivery'
 
 interface OrderItem {
   brand: string
@@ -133,7 +133,7 @@ const maybeFetchDeliveryDetail = async () => {
   try {
     const response = await sessionHttp.get(`/api/public/orders/sales/${summary.value.orderId}`)
     if (response.data && response.data.success) {
-      deliveryDetail.value = response.data.data as SalesOrderDeliveryDetail
+      deliveryDetail.value = parseSalesOrderDeliveryDetail(response.data.data)
     }
   } catch (err) {
     console.error('Failed to load delivery detail:', err)
