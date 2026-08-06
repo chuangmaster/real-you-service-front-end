@@ -167,7 +167,7 @@ const handleBind = async () => {
 
     if (response.data && response.data.success) {
       summary.value.isBound = true
-      // 綁定前的 ensureSession() 很可能因客戶當時尚未綁定而以 LINE_NOT_BOUND
+      // 綁定前的 ensureSession() 很可能因客戶當時尚未綁定而以 NOT_BOUND
       // 失敗、sessionReady 停留在 false；綁定成功後客戶已可換發憑證，
       // 需重新呼叫一次才能讓 maybeFetchDeliveryDetail() 真正抓到資料。
       ensureSession()
@@ -381,7 +381,7 @@ onMounted(async () => {
       <div v-else-if="exchangeError" class="bg-white border border-outline-variant/30 shadow-sm p-6 text-center mt-4">
         <p class="font-body-md text-sm text-primary mb-4">
           {{
-            exchangeError.code === 'LINE_NOT_BOUND'
+            exchangeError.code === 'NOT_BOUND'
               ? $t('order.session.bindRequired')
               : exchangeError.kind === 'identity'
                 ? $t('order.session.errorIdentity')

@@ -1,6 +1,10 @@
 // 客戶授權工作階段（Customer Session）共用邏輯。
 // 封裝 LIFF 登入狀態判斷、向後端換發授權憑證、sessionStorage 儲存與重用、
 // 換發失敗的分類，供任何 LIFF 頁面重用（見 specs/001-liff-jwt-login/）。
+//
+// 實際串接的後端端點是 POST /api/public/member/login（非規劃階段
+// specs/001-liff-jwt-login/contracts/customer-session-exchange.md 假設的
+// /api/public/customers/session，該文件已於 2026-08-06 補上對應說明）。
 import { ref } from 'vue'
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
 import liff from '@line/liff'
@@ -10,9 +14,9 @@ const STORAGE_KEY = 'realyou.customerSession'
 // ---- 資料模型（見 data-model.md）----
 
 export interface CustomerSession {
-  /** 後端核發的授權憑證（JWT），用於後續請求的 Authorization header */
+  /** 後端核發的授權憑證（JWT，後端回應欄位為 accessToken），用於後續請求的 Authorization header */
   token: string
-  /** 絕對過期時間（ISO 8601），由換發當下 + expiresInSeconds 換算而來 */
+  /** 絕對過期時間（ISO 8601），由換發當下 + expiresIn 秒數換算而來 */
   expiresAt: string
 }
 
@@ -24,7 +28,14 @@ export interface LineIdentityCredential {
 export interface ExchangeError {
   /** 依 research.md §5 的規則分類：身分類或服務類 */
   kind: 'identity' | 'service'
-  /** 身分類錯誤時，後端回傳的 ResponseCodes（如 INVALID_LINE_TOKEN、LINE_NOT_BOUND） */
+  /**
+   * 身分類錯誤時，後端回傳的 ResponseCodes：
+   * - `INVALID_LINE_TOKEN`（401）：LINE ID Token 驗證失敗
+   * - `NOT_BOUND`（403）：該 LINE 帳號尚未完成綁定
+   * - `TOKEN_INVALIDATED`：非後端回傳碼，前端自訂——受保護端點回應 401
+   *   時代表 security stamp 比對失敗（例如密碼被異動），憑證雖未過期但
+   *   已被後端主動作廢
+   */
   code?: string
 }
 
@@ -48,6 +59,10 @@ function readStoredSession(): CustomerSession | null {
 
 function writeStoredSession(session: CustomerSession): void {
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session))
+}
+
+function clearStoredSession(): void {
+  sessionStorage.removeItem(STORAGE_KEY)
 }
 
 // ---- LIFF 初始化包裝 ----
@@ -91,12 +106,16 @@ function classifyExchangeError(err: unknown): ExchangeError {
   if (axios.isAxiosError(err) && err.response) {
     const status = err.response.status
     const code = (err.response.data as { code?: string } | undefined)?.code
-    if (status === 400 && (code === 'INVALID_LINE_TOKEN' || code === 'LINE_NOT_BOUND')) {
+    if (status === 401 && code === 'INVALID_LINE_TOKEN') {
+      return { kind: 'identity', code }
+    }
+    if (status === 403 && code === 'NOT_BOUND') {
       return { kind: 'identity', code }
     }
   }
-  // 網路層錯誤（無回應）、408/5xx、其他未預期狀態碼，一律歸類為服務類錯誤，
-  // 避免把未知錯誤誤判成身分問題而誤導客戶。
+  // 網路層錯誤（無回應）、429（member-login 有 rate limiting）、5xx、
+  // 其他未預期狀態碼，一律歸類為服務類錯誤，避免把未知錯誤誤判成身分問題
+  // 而誤導客戶。
   return { kind: 'service' }
 }
 
@@ -107,20 +126,37 @@ const sessionReady = ref(readStoredSession() !== null)
 const isLiffLoggedIn = ref(false)
 const exchangeError = ref<ExchangeError | null>(null)
 
+// 受保護端點（透過 sessionHttp 呼叫）回應 401，代表後端
+// CustomerSecurityStampValidationMiddleware 判定憑證已被作廢（例如客戶
+// 密碼被異動）——即使 client 端檢查的 expiresAt 還沒到期。這種情況不能
+// 當成一般錯誤重試，要清除本地憑證並歸類為身分類錯誤，讓依賴
+// exchangeError 呈現「請重新登入」文案的頁面自然反映這個狀態。
+sessionHttp.interceptors.response.use(
+  (response) => response,
+  (err) => {
+    if (axios.isAxiosError(err) && err.response?.status === 401) {
+      clearStoredSession()
+      sessionReady.value = false
+      exchangeError.value = { kind: 'identity', code: 'TOKEN_INVALIDATED' }
+    }
+    return Promise.reject(err)
+  }
+)
+
 async function exchangeSession(lineIdToken: string): Promise<string | null> {
   const payload: LineIdentityCredential = { lineIdToken }
   try {
-    const response = await axios.post('/api/public/customers/session', payload)
+    const response = await axios.post('/api/public/member/login', payload)
     if (response.data && response.data.success) {
-      const { token, expiresInSeconds } = response.data.data as {
-        token: string
-        expiresInSeconds: number
+      const { accessToken, expiresIn } = response.data.data as {
+        accessToken: string
+        expiresIn: number
       }
-      const expiresAt = new Date(Date.now() + expiresInSeconds * 1000).toISOString()
-      writeStoredSession({ token, expiresAt })
+      const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString()
+      writeStoredSession({ token: accessToken, expiresAt })
       sessionReady.value = true
       exchangeError.value = null
-      return token
+      return accessToken
     }
     exchangeError.value = { kind: 'service' }
     return null
