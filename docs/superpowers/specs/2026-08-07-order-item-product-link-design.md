@@ -28,13 +28,21 @@
 `src/views/OrderView.vue`：
 
 - `OrderItem` 介面新增 `inventoryItemId: string | null`。
-- 商品名稱區塊（原本的 `brand` + `style` 文字）：
-  - `inventoryItemId` 有值 → 包一層 `<router-link :to="{ name: 'product-detail', params: { id: orderItem.inventoryItemId } }">`，導到既有的 `/product/:id` 路由（`ProductDetailView.vue`，本來就是給 UUID 查鑑定證書用的頁面，見 `src/router/index.ts`）。文字加底線提示可點擊。
-  - `inventoryItemId` 是 `null` → 維持原本純文字顯示，不做連結，避免連到一個註定 404 的頁面。
+- 品項列（縮圖＋商品名稱＋金額整列）：
+  - `inventoryItemId` 有值 → 整列包一層 `<router-link :to="{ name: 'product-detail', params: { id: orderItem.inventoryItemId } }">`，導到既有的 `/product/:id` 路由（`ProductDetailView.vue`，本來就是給 UUID 查鑑定證書用的頁面，見 `src/router/index.ts`）。
+  - `inventoryItemId` 是 `null` → 維持原本純文字顯示（`<div>` 而非 `<router-link>`），不做連結，避免連到一個註定 404 的頁面。
 - 沒有新增額外的 API 呼叫——鑑定頁面本來就是靠 `ProductDetailView.vue` 掛載後自己打 `GET /api/public/inventory/{id}` 抓資料，這裡只是提供正確的 UUID 讓路由導過去。
 - 用 `<router-link>` 而非 `@click` + `router.push()`：保留原生 `<a>` 語意（可以 ctrl/cmd+click 開新分頁、可以看到目標網址），跟專案裡其他導覽連結一致。
 
+### 3.1 後續調整（2026-08-07）：加強可點擊的視覺提示
+
+第一版只把商品名稱文字加底線標示可點擊，實際使用後回饋「感覺只是用標題還不夠直覺」——底線在手機瀏覽器上不夠醒目，熱區也偏小（只有文字本身）。改為整列可點擊 + 右側 `chevron_right` 圖示的清單列樣式（比較兩三個方向後選定，見對話紀錄）：
+
+- 整列（縮圖、品名、金額）都包進 `<router-link>` / `<div>`，不再只有文字區塊可點。
+- 移除文字底線，改在列尾加 `chevron_right`（Material Symbols）圖示，是行動裝置清單「可點進下一頁」最常見的視覺語彙。
+- `hover:bg-surface-container active:bg-surface-container`：整列背景在互動時變深一階，取代原本文字的 `hover:opacity-70`。
+- 兩個分支（有 / 沒有 `inventoryItemId`）的內部 markup 特意保持一致（除了外層標籤與 chevron），純粹只是「這一列能不能點」的差異，沒有 id 的品項看起來就是少了 chevron 圖示、背景不會有 hover 效果。
+
 ## 4. 不在此規格範圍內
 
-- 品項縮圖（`imageUrl`）與金額（`amount`）目前不是連結的一部分，維持原本純顯示——使用者的需求明確是「商品名稱」，沒有要求整個項目卡片可點擊。
 - LIFF 內嵌瀏覽器的分頁行為（`<router-link>` 預設同分頁導覽，SPA 內部路由切換，不會離開 LIFF webview）——沒有額外處理，沿用 Vue Router 預設行為。

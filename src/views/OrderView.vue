@@ -336,33 +336,41 @@ onMounted(async () => {
       <div class="mb-8">
         <h2 class="font-label-caps text-xs text-secondary uppercase tracking-wider mb-4">{{ $t('order.summary.itemsHeading') }}</h2>
         <div class="space-y-3">
-          <div
-            v-for="(orderItem, index) in summary.items"
-            :key="index"
-            class="flex items-center gap-4 bg-surface-container-low p-4"
-          >
-            <div class="w-14 h-14 bg-surface-container overflow-hidden flex-shrink-0 flex items-center justify-center">
-              <img v-if="orderItem.imageUrl" :src="orderItem.imageUrl" :alt="orderItem.style" class="w-full h-full object-cover" />
-              <span v-else class="material-symbols-outlined text-secondary text-[24px]">inventory_2</span>
-            </div>
+          <template v-for="(orderItem, index) in summary.items" :key="index">
             <!-- inventoryItemId 可能是 null（後端 PublicOrderItemResult 該欄位為 nullable
                  uuid，例如服務單品項本來就沒有對應的 inventory 紀錄）——只有拿得到 id
-                 才做成連到鑑定頁面（/product/:id，即 ProductDetailView）的連結，
-                 否則維持原本純文字顯示，避免連到一個註定 404 的頁面。 -->
+                 才把整列做成連到鑑定頁面（/product/:id，即 ProductDetailView）的連結，
+                 否則維持原本純文字顯示，避免連到一個註定 404 的頁面。整列可點擊
+                 （而非只有商品名稱文字）搭配右側 chevron 圖示，比純文字加底線更明確
+                 地提示「這裡可以點」，熱區也更大、更適合手機瀏覽器操作。 -->
             <router-link
               v-if="orderItem.inventoryItemId"
               :to="{ name: 'product-detail', params: { id: orderItem.inventoryItemId } }"
-              class="flex-grow hover:opacity-70 transition-opacity"
+              class="flex items-center gap-4 bg-surface-container-low p-4 hover:bg-surface-container active:bg-surface-container transition-colors"
             >
-              <p class="font-title-lg text-sm text-on-surface underline decoration-outline-variant underline-offset-2">{{ orderItem.brand }}</p>
-              <p class="font-body-md text-xs text-secondary">{{ orderItem.style }}</p>
+              <div class="w-14 h-14 bg-surface-container overflow-hidden flex-shrink-0 flex items-center justify-center">
+                <img v-if="orderItem.imageUrl" :src="orderItem.imageUrl" :alt="orderItem.style" class="w-full h-full object-cover" />
+                <span v-else class="material-symbols-outlined text-secondary text-[24px]">inventory_2</span>
+              </div>
+              <div class="flex-grow">
+                <p class="font-title-lg text-sm text-on-surface">{{ orderItem.brand }}</p>
+                <p class="font-body-md text-xs text-secondary">{{ orderItem.style }}</p>
+              </div>
+              <p class="font-data-mono text-sm text-on-surface">{{ formatCurrency(orderItem.amount) }}</p>
+              <span class="material-symbols-outlined text-secondary text-[20px] flex-shrink-0">chevron_right</span>
             </router-link>
-            <div v-else class="flex-grow">
-              <p class="font-title-lg text-sm text-on-surface">{{ orderItem.brand }}</p>
-              <p class="font-body-md text-xs text-secondary">{{ orderItem.style }}</p>
+            <div v-else class="flex items-center gap-4 bg-surface-container-low p-4">
+              <div class="w-14 h-14 bg-surface-container overflow-hidden flex-shrink-0 flex items-center justify-center">
+                <img v-if="orderItem.imageUrl" :src="orderItem.imageUrl" :alt="orderItem.style" class="w-full h-full object-cover" />
+                <span v-else class="material-symbols-outlined text-secondary text-[24px]">inventory_2</span>
+              </div>
+              <div class="flex-grow">
+                <p class="font-title-lg text-sm text-on-surface">{{ orderItem.brand }}</p>
+                <p class="font-body-md text-xs text-secondary">{{ orderItem.style }}</p>
+              </div>
+              <p class="font-data-mono text-sm text-on-surface">{{ formatCurrency(orderItem.amount) }}</p>
             </div>
-            <p class="font-data-mono text-sm text-on-surface">{{ formatCurrency(orderItem.amount) }}</p>
-          </div>
+          </template>
         </div>
       </div>
 
