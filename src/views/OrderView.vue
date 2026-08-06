@@ -98,6 +98,27 @@ const binding = ref(false)
 const bindError = ref('')
 const autoBindInProgress = ref(false)
 
+// POST /api/public/orders/bind 失敗時的錯誤碼 → 文案對照，供 handleBind（手動點擊）
+// 與 attemptAutoBind（靜默自動綁定）共用，避免兩處各自維護一份相同的對照表。
+const resolveBindErrorMessage = (code: string | undefined) => {
+  switch (code) {
+    case 'INVALID_LINE_TOKEN':
+      return t('order.bind.errors.invalidLineToken')
+    case 'LINE_ALREADY_BOUND':
+      return t('order.bind.errors.lineAlreadyBound')
+    case 'CUSTOMER_ALREADY_BOUND':
+      return t('order.bind.errors.customerAlreadyBound')
+    default:
+      return t('order.errorServer')
+  }
+}
+
+// LINE_ALREADY_BOUND / CUSTOMER_ALREADY_BOUND：換一個 LINE 帳號或再點一次按鈕
+// 都無法解決的永久性衝突，attemptAutoBind 靜默重試時如果遇到這兩種錯誤，
+// 就不再照舊靜默吞掉，而是直接顯示錯誤（見
+// docs/superpowers/specs/2026-07-25-order-auto-bind-design.md 的後續調整）。
+const PERMANENT_BIND_CONFLICT_CODES = ['LINE_ALREADY_BOUND', 'CUSTOMER_ALREADY_BOUND']
+
 // Recipient/delivery detail state — only fetched for bound Sales orders once
 // the customer has a valid session JWT. Silent-failure by design, same as
 // attemptAutoBind's non-404 failures: the section just doesn't appear.
@@ -165,17 +186,11 @@ const handleBind = async () => {
         // share token itself is no longer valid.
         summary.value = null
         error.value = t('order.errorInvalidLink')
-      } else if (code === 'INVALID_LINE_TOKEN') {
-        bindError.value = t('order.bind.errors.invalidLineToken')
-      } else if (code === 'LINE_ALREADY_BOUND') {
-        bindError.value = t('order.bind.errors.lineAlreadyBound')
-      } else if (code === 'CUSTOMER_ALREADY_BOUND') {
-        bindError.value = t('order.bind.errors.customerAlreadyBound')
       } else {
-        bindError.value = t('order.errorServer')
+        bindError.value = resolveBindErrorMessage(code)
       }
     } else {
-      bindError.value = t('order.errorServer')
+      bindError.value = resolveBindErrorMessage(undefined)
     }
   } finally {
     binding.value = false
@@ -213,9 +228,16 @@ const attemptAutoBind = async () => {
       summary.value = null
       error.value = t('order.errorInvalidLink')
     } else {
-      // Silent by design: a failed background attempt just falls back to
-      // showing the manual bind button, with no error copy.
-      console.error('Silent auto-bind failed:', err)
+      const code = axios.isAxiosError(err) ? err.response?.data?.code : undefined
+      if (code && PERMANENT_BIND_CONFLICT_CODES.includes(code)) {
+        // 重試（無論是靜默重試還是使用者再點一次按鈕）都無法解決的永久性衝突，
+        // 不再照原設計靜默吞掉，直接顯示錯誤讓使用者知道要聯絡客服。
+        bindError.value = resolveBindErrorMessage(code)
+      } else {
+        // 其餘暫時性錯誤（LINE token 問題、網路/伺服器錯誤等）維持原本靜默設計：
+        // 只記錄 console.error，退回顯示手動綁定按鈕讓使用者可以重試。
+        console.error('Silent auto-bind failed:', err)
+      }
     }
   } finally {
     autoBindInProgress.value = false
@@ -351,8 +373,11 @@ onMounted(async () => {
         </button>
       </div>
 
-      <!-- CUSTOMER SESSION EXCHANGE ERROR（客戶授權憑證換發失敗，FR-006） -->
-      <div v-if="exchangeError" class="bg-white border border-outline-variant/30 shadow-sm p-6 text-center mt-4">
+      <!-- CUSTOMER SESSION EXCHANGE ERROR（客戶授權憑證換發失敗，FR-006）
+           擇一顯示：綁定區塊優先，避免使用者尚未綁定時同時看到「請先綁定」
+           與這裡的換發失敗訊息（兩者語意重疊或互相矛盾）。綁定完成、或自動
+           靜默綁定不在進行中之後，才輪到這裡呈現換發失敗的狀態。 -->
+      <div v-else-if="exchangeError" class="bg-white border border-outline-variant/30 shadow-sm p-6 text-center mt-4">
         <p class="font-body-md text-sm text-primary mb-4">
           {{
             exchangeError.code === 'LINE_NOT_BOUND'

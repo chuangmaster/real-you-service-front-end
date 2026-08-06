@@ -101,3 +101,16 @@ onMounted(async () => {
 - 後端 API 或錯誤 code 的任何異動。
 - 針對永久性失敗（`LINE_ALREADY_BOUND` / `CUSTOMER_ALREADY_BOUND`）的用戶端記憶/防重試機制——已在澄清問題中明確決定不做。
 - i18n 文案異動——本次改動不引入任何新的使用者可見文字。
+
+## 後續調整（2026-08-06）
+
+實際上線後發現：`attemptAutoBind()` 靜默失敗時完全不顯示錯誤的設計，遇到 `LINE_ALREADY_BOUND` / `CUSTOMER_ALREADY_BOUND` 這類**永久性衝突**時會讓使用者卡住——退回顯示的「同意綁定」按鈕再點一次，呼叫的是同一支 `POST /api/public/orders/bind`、帶同一個 LINE ID Token，必然得到一樣的失敗結果，使用者完全無從得知問題所在或該怎麼處理。
+
+因此將原本「一律靜默」的規則收斂為：
+
+- `LINE_ALREADY_BOUND` / `CUSTOMER_ALREADY_BOUND`（重試無法解決的永久性衝突）→ **不再靜默**，直接把對應的 `bindError` 文案顯示在綁定區塊（沿用 `handleBind` 既有的 `order.bind.errors.*` 文案，未新增 i18n 字串）。
+- 其餘失敗（`INVALID_LINE_TOKEN`、網路/伺服器錯誤等**暫時性**原因）→ 維持本規格原本的設計，僅 `console.error`，退回顯示手動按鈕讓使用者可重試。
+
+同時，訂單頁面上「綁定區塊」與「客戶授權憑證換發失敗」（`useCustomerSession` 的 `exchangeError`，見 `specs/001-liff-jwt-login/spec.md` FR-006）原本是兩個互相獨立的 `v-if`，可能同時顯示、造成語意重疊甚至矛盾（例如使用者尚未綁定時，`exchangeError` 常常就是 `LINE_NOT_BOUND`，訊息與綁定區塊的提示重複）。改為 `v-else-if`，綁定區塊優先：使用者尚未完成綁定（或靜默綁定進行中）時只顯示綁定 CTA，換發失敗訊息延後到綁定完成之後才有機會出現。
+
+「不記憶永久性失敗、每次重新進入頁面都重新靜默嘗試一次」這個決定本身不變——差別只在於失敗當下要不要把錯誤讓使用者看見，不涉及新增用戶端記憶機制。
