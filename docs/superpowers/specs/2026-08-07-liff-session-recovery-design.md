@@ -93,6 +93,8 @@ if (!isLiffLoggedIn.value) {
 - `order.session.loginRequired` — 尚未登入 LINE 的提示。既有 `errorIdentity` 的語意是「驗證失敗」，套在「根本還沒登入」上並不正確，故分開。
 - `order.session.loginButton` — 「重新登入 LINE」按鈕文字。
 
+第四節另需新增 `order.recipient.errors.sessionExpired`。本次共新增三個 key，各需 en 與 zh-TW 兩份。
+
 ### 三、綁定按鈕
 
 新增 `bindNeedsRelogin` ref。`handleBind` 與 `attemptAutoBind` 收到 `INVALID_LINE_TOKEN` 時設為 `true`；按鈕在該狀態下文字改為 `order.session.loginButton`、點擊改呼叫 `relogin()`。
