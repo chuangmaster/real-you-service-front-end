@@ -216,9 +216,9 @@ interface SalesOrderDeliveryDetail {
 
 新增 `parseSalesOrderDeliveryDetail()`（`src/types/orderDelivery.ts`），統一在 `deliveryInfo` 是字串時 `JSON.parse()` 轉成物件，兩個消費點（`OrderView.vue` 的 `maybeFetchDeliveryDetail()`、`OrderRecipientSection.vue` 的 `refetchDetail()`）都改用這個函式，不再直接 `as SalesOrderDeliveryDetail` 轉型了事。
 
-### 第三輪：STORE_PICKUP 的門市欄位改為下拉選單
+### 第三輪：PICKUP（門市自取）的取貨地點改為下拉選單
 
-原本 `storePickupForm.storeInfo` 是純文字輸入框，使用者手動打店名容易打錯字，改為從後端門市清單挑選。查 swagger（`http://localhost:5100/swagger/v1/swagger.json`）確認端點為 `GET /api/public/stores`，回應：
+原本 `pickupForm.location` 是純文字輸入框，使用者手動打店名容易打錯字，改為從後端門市清單挑選。查 swagger（`http://localhost:5100/swagger/v1/swagger.json`）確認端點為 `GET /api/public/stores`，回應：
 
 ```json
 {
@@ -233,12 +233,14 @@ interface SalesOrderDeliveryDetail {
 
 此端點要求帶 JWT（門市清單只給已登入客戶查），因此跟其他訂單相關呼叫一樣用 `sessionHttp`（會自動附上 `Authorization`），不是一般 `axios`。（開發過程中曾誤判：本機測試初期未帶 token 直接 `curl` 該端點也回 200，一度以為不需要登入即可存取而改用一般 `axios`；之後確認實際規格要求要帶 JWT，已改回 `sessionHttp`——見本文件 git 歷史。）
 
-送到後端的 `deliveryInfo.storeInfo` 欄位型別維持不變、仍是純文字（後端資料庫本來就只存字串，沒有門市代碼欄位可對應），下拉選單只是把可選值收斂成後端目前有效的門市名稱清單，`<select v-model="storePickupForm.storeInfo">` 的 `value` 直接綁 `name`、不是 `code`。
+**踩過的坑（命名混淆）**：第一版誤把下拉選單套到 `STORE_PICKUP`（超商取貨，7-11／全家等第三方通路）分頁的 `storeInfo` 欄位，而不是 `PICKUP`（門市自取，指自家門市）分頁的 `location` 欄位——這正是 `types/orderDelivery.ts` 檔頭註解特別提醒過的命名陷阱（「PICKUP = 門市自取，STORE_PICKUP = 超商取貨，容易搞混」）。使用者實測發現「門市自取」分頁沒有出現下拉選單後才抓到這個誤植，已修正為套用在 `PICKUP` 分頁的 `location` 欄位，`STORE_PICKUP` 的 `storeInfo` 改回原本的純文字輸入（超商取貨走第三方系統，本來就不適用 `/api/public/stores` 這份自家門市清單）。
+
+送到後端的 `deliveryInfo.location` 欄位型別維持不變、仍是純文字（後端資料庫本來就只存字串，沒有門市代碼欄位可對應），下拉選單只是把可選值收斂成後端目前有效的門市名稱清單，`<select v-model="pickupForm.location">` 的 `value` 直接綁 `name`、不是 `code`。
 
 `OrderRecipientSection.vue` 新增：
 
 - `storeOptions` / `storeListState`（`idle` / `loading` / `loaded` / `error`）：`loadStoreOptions()` 呼叫 `GET /api/public/stores`，在 `startEditing()` 進入編輯模式時觸發（惰性載入、以 `storeListState` 擋重複呼叫），不在元件掛載當下就抓，避免使用者根本沒點編輯就多打一次 API。
-- `storeSelectOptions`：把既有（可能是舊資料裡不在門市清單內的自由文字）`storePickupForm.storeInfo` 併入選項清單，避免使用者一打開編輯表單就看到下拉選單空白、實際上底層欄位是有值的。
+- `storeSelectOptions`：把既有（可能是舊資料裡不在門市清單內的自由文字）`pickupForm.location` 併入選項清單，避免使用者一打開編輯表單就看到下拉選單空白、實際上底層欄位是有值的。
 - 門市清單載入失敗時（`storeListState === 'error'`），退回原本的純文字輸入框並顯示提示文案（`order.recipient.storeLoadError`），確保 API 掛掉時使用者仍能手動輸入完成編輯，不會被下拉選單卡住。
 
 ## 不在此規格範圍內
