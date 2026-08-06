@@ -146,7 +146,12 @@ const handleBind = async () => {
 
     if (response.data && response.data.success) {
       summary.value.isBound = true
-      maybeFetchDeliveryDetail()
+      // 綁定前的 ensureSession() 很可能因客戶當時尚未綁定而以 LINE_NOT_BOUND
+      // 失敗、sessionReady 停留在 false；綁定成功後客戶已可換發憑證，
+      // 需重新呼叫一次才能讓 maybeFetchDeliveryDetail() 真正抓到資料。
+      ensureSession()
+        .then(() => maybeFetchDeliveryDetail())
+        .catch((err) => console.error('Failed to refresh session after bind:', err))
     } else {
       bindError.value = t('order.errorServer')
     }
@@ -195,7 +200,11 @@ const attemptAutoBind = async () => {
 
     if (response.data && response.data.success) {
       summary.value.isBound = true
-      maybeFetchDeliveryDetail()
+      // 理由同 handleBind：綁定前的 ensureSession() 很可能因尚未綁定而失敗，
+      // 這裡需重新呼叫一次才能讓 maybeFetchDeliveryDetail() 真正抓到資料。
+      ensureSession()
+        .then(() => maybeFetchDeliveryDetail())
+        .catch((err) => console.error('Failed to refresh session after bind:', err))
     }
   } catch (err) {
     if (axios.isAxiosError(err) && err.response && err.response.status === 404) {

@@ -38,9 +38,17 @@ const readOnlyFields = computed<{ labelKey: string; value: string }[]>(() => {
   const method = props.detail.deliveryMethod
   if (!info || !method) return []
 
+  // 第一列固定顯示收件方式本身的翻譯名稱（設計文件「收件方式中文名稱」）。
+  // 沒有現成的「收件方式」欄位標籤可用（Task 1 只新增了 order.recipient.methods.*
+  // 這組值本身，未新增對應的欄位標籤 key），且不可在此新增新的 i18n key，
+  // 因此這一列不搭配 labelKey（labelKey 留空，範本端會略過渲染標籤），
+  // 讓收件方式名稱本身獨立成一列、以較醒目的樣式呈現。
+  const methodField = { labelKey: '', value: t(`order.recipient.methods.${method}`) }
+
   if (method === 'HOME_DELIVERY') {
     const d = info as HomeDeliveryInfo
     return [
+      methodField,
       { labelKey: 'order.recipient.fields.recipientName', value: d.recipientName },
       { labelKey: 'order.recipient.fields.recipientPhone', value: d.recipientPhone },
       { labelKey: 'order.recipient.fields.recipientAddress', value: d.recipientAddress }
@@ -49,13 +57,14 @@ const readOnlyFields = computed<{ labelKey: string; value: string }[]>(() => {
   if (method === 'STORE_PICKUP') {
     const d = info as StorePickupInfo
     return [
+      methodField,
       { labelKey: 'order.recipient.fields.storeInfo', value: d.storeInfo },
       { labelKey: 'order.recipient.fields.recipientName', value: d.recipientName },
       { labelKey: 'order.recipient.fields.recipientPhone', value: d.recipientPhone }
     ]
   }
   const d = info as PickupInfo
-  return [{ labelKey: 'order.recipient.fields.location', value: d.location }]
+  return [methodField, { labelKey: 'order.recipient.fields.location', value: d.location }]
 })
 
 // ---- 編輯表單狀態 ----
@@ -184,10 +193,18 @@ function validate(): boolean {
   return valid
 }
 
+// 盡力而為：呼叫端（handleSave 的 catch 區塊）已經在呼叫這裡之前設定好自己的
+// formError，重抓最新資料只是錦上添花。若這裡本身失敗（網路異常、JWT 過期等），
+// 不應該讓例外往外傳導致呼叫端後續的收尾動作（例如 ORDER_NOT_EDITABLE 分支的
+// `editing.value = false`）被跳過，因此在此吞掉例外並僅記錄 log。
 async function refetchDetail(): Promise<void> {
-  const response = await sessionHttp.get(`/api/public/orders/sales/${props.orderId}`)
-  if (response.data && response.data.success) {
-    emit('updated', response.data.data as SalesOrderDeliveryDetail)
+  try {
+    const response = await sessionHttp.get(`/api/public/orders/sales/${props.orderId}`)
+    if (response.data && response.data.success) {
+      emit('updated', response.data.data as SalesOrderDeliveryDetail)
+    }
+  } catch (err) {
+    console.error('Failed to refetch delivery detail:', err)
   }
 }
 
@@ -232,11 +249,18 @@ async function handleSave() {
       const code = (err.response.data as { code?: string } | undefined)?.code
 
       if (status === 409 && code === 'VERSION_CONFLICT') {
-        formError.value = t('order.recipient.errors.versionConflict')
-        // 重抓最新資料覆蓋 props.detail（透過 emit('updated', ...)），
-        // 但不重新呼叫 startEditing()，讓使用者已輸入的內容留在畫面上，
-        // 自行對照最新資料後再按一次儲存。
+        // 重抓最新資料覆蓋 props.detail（透過 emit('updated', ...)），並重新
+        // 呼叫 startEditing() 讓表單改填最新值，避免使用者對照著舊的已輸入
+        // 內容送出、用舊 version 覆蓋掉別人剛更新的結果（見設計文件「表單
+        // 改填最新值」）。refetchDetail() 內的 emit('updated', ...) 是同步
+        // 呼叫父層 `deliveryDetail = $event`，等這個 await 完成時
+        // props.detail 已經是最新值，故此處可直接呼叫 startEditing() 讀取，
+        // 不需要額外等待 nextTick。
+        // 注意：startEditing() 一開始會把 formError 重設為空字串，所以提示
+        // 文字要在呼叫它「之後」才設定，否則會被立刻清掉。
         await refetchDetail()
+        startEditing()
+        formError.value = t('order.recipient.errors.versionConflict')
       } else if (status === 422 && code === 'ORDER_NOT_EDITABLE') {
         formError.value = t('order.recipient.errors.notEditable')
         await refetchDetail()
@@ -276,11 +300,14 @@ async function handleSave() {
     <div v-if="!editing" class="space-y-0">
       <div
         v-for="field in readOnlyFields"
-        :key="field.labelKey"
+        :key="field.labelKey || field.value"
         class="flex justify-between py-4 border-b border-outline-variant/20 last:border-b-0"
       >
-        <span class="font-label-caps text-xs text-secondary uppercase tracking-wider">{{ $t(field.labelKey) }}</span>
-        <span class="font-data-mono text-sm text-on-surface text-right">{{ field.value }}</span>
+        <span v-if="field.labelKey" class="font-label-caps text-xs text-secondary uppercase tracking-wider">{{ $t(field.labelKey) }}</span>
+        <span
+          class="font-data-mono text-sm text-on-surface text-right"
+          :class="{ 'font-title-lg text-left': !field.labelKey }"
+        >{{ field.value }}</span>
       </div>
     </div>
 
