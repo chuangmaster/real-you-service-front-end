@@ -362,8 +362,9 @@ onMounted(async () => {
 
       <!-- BIND SECTION -->
       <div v-if="!summary.isBound && !autoBindInProgress" class="bg-white border border-outline-variant/30 shadow-sm p-6 text-center">
-        <p class="font-body-md text-sm text-secondary mb-5">{{ $t('order.bind.prompt') }}</p>
-        <p v-if="bindError" class="font-body-md text-xs text-primary mb-4">{{ bindError }}</p>
+        <!-- 已經顯示錯誤時，「同意綁定」提示文字沒有意義（甚至矛盾），改顯示錯誤訊息即可 -->
+        <p v-if="!bindError" class="font-body-md text-sm text-secondary mb-5">{{ $t('order.bind.prompt') }}</p>
+        <p v-else class="font-body-md text-xs text-primary mb-4">{{ bindError }}</p>
         <button
           class="w-full bg-primary text-white px-8 py-4 font-label-caps text-label-caps hover:bg-primary-container transition-colors duration-300 tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="binding"
