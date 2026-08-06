@@ -231,7 +231,7 @@ interface SalesOrderDeliveryDetail {
 }
 ```
 
-直接 `curl` 實測（未帶 `Authorization` header）也回 200，確認此端點雖掛在需要登入的訂單頁面下，但實際不需要登入即可存取，因此改用一般 `axios`（跟其餘 `/api/public/inventory` 等公開端點一致），不用 `sessionHttp`。
+此端點要求帶 JWT（門市清單只給已登入客戶查），因此跟其他訂單相關呼叫一樣用 `sessionHttp`（會自動附上 `Authorization`），不是一般 `axios`。（開發過程中曾誤判：本機測試初期未帶 token 直接 `curl` 該端點也回 200，一度以為不需要登入即可存取而改用一般 `axios`；之後確認實際規格要求要帶 JWT，已改回 `sessionHttp`——見本文件 git 歷史。）
 
 送到後端的 `deliveryInfo.storeInfo` 欄位型別維持不變、仍是純文字（後端資料庫本來就只存字串，沒有門市代碼欄位可對應），下拉選單只是把可選值收斂成後端目前有效的門市名稱清單，`<select v-model="storePickupForm.storeInfo">` 的 `value` 直接綁 `name`、不是 `code`。
 

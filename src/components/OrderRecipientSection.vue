@@ -95,8 +95,8 @@ let pickupTimeOnLoad: string | null = null
 // 後端 /api/public/stores 只回傳 code/name，這裡下拉選單挑的是 name，
 // 送到 PATCH .../delivery 的 deliveryInfo.storeInfo 一律是純文字店名，
 // 不會送出 code（後端該欄位本來就只存純文字，見設計文件）。
-// 此端點掛在 /api/public/ 前綴下且實測不需帶 JWT 即可存取，因此用一般
-// axios（未帶 Authorization），跟 sessionHttp 的訂單相關呼叫區分開來。
+// 此端點雖掛在 /api/public/ 前綴下，實際仍要求帶 JWT，因此跟其他訂單
+// 相關呼叫一樣用 sessionHttp（會自動附上 Authorization），不是一般 axios。
 interface StoreOption {
   code: string
   name: string
@@ -108,7 +108,7 @@ async function loadStoreOptions() {
   if (storeListState.value === 'loading' || storeListState.value === 'loaded') return
   storeListState.value = 'loading'
   try {
-    const response = await axios.get('/api/public/stores')
+    const response = await sessionHttp.get('/api/public/stores')
     if (response.data && response.data.success) {
       storeOptions.value = response.data.data ?? []
       storeListState.value = 'loaded'
