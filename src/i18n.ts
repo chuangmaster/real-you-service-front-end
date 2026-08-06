@@ -112,6 +112,9 @@ const messages = {
           storeInfo: 'Store Info',
           location: 'Pickup Location'
         },
+        storePlaceholder: 'Select a store',
+        storeLoading: 'Loading...',
+        storeLoadError: 'Failed to load the store list. Please enter the store name directly.',
         editButton: 'EDIT',
         saveButton: 'SAVE',
         cancelButton: 'CANCEL',
@@ -239,6 +242,9 @@ const messages = {
           storeInfo: '超商門市資訊',
           location: '取貨地點'
         },
+        storePlaceholder: '請選擇門市',
+        storeLoading: '載入中...',
+        storeLoadError: '門市清單載入失敗，請直接輸入門市名稱。',
         editButton: '編輯',
         saveButton: '儲存',
         cancelButton: '取消',

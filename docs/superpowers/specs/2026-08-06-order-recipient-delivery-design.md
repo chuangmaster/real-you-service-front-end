@@ -216,6 +216,31 @@ interface SalesOrderDeliveryDetail {
 
 新增 `parseSalesOrderDeliveryDetail()`（`src/types/orderDelivery.ts`），統一在 `deliveryInfo` 是字串時 `JSON.parse()` 轉成物件，兩個消費點（`OrderView.vue` 的 `maybeFetchDeliveryDetail()`、`OrderRecipientSection.vue` 的 `refetchDetail()`）都改用這個函式，不再直接 `as SalesOrderDeliveryDetail` 轉型了事。
 
+### 第三輪：STORE_PICKUP 的門市欄位改為下拉選單
+
+原本 `storePickupForm.storeInfo` 是純文字輸入框，使用者手動打店名容易打錯字，改為從後端門市清單挑選。查 swagger（`http://localhost:5100/swagger/v1/swagger.json`）確認端點為 `GET /api/public/stores`，回應：
+
+```json
+{
+  "success": true,
+  "code": "SUCCESS",
+  "message": "查詢成功",
+  "data": [{ "code": "00", "name": "總店" }],
+  "timestamp": "...",
+  "traceId": "..."
+}
+```
+
+直接 `curl` 實測（未帶 `Authorization` header）也回 200，確認此端點雖掛在需要登入的訂單頁面下，但實際不需要登入即可存取，因此改用一般 `axios`（跟其餘 `/api/public/inventory` 等公開端點一致），不用 `sessionHttp`。
+
+送到後端的 `deliveryInfo.storeInfo` 欄位型別維持不變、仍是純文字（後端資料庫本來就只存字串，沒有門市代碼欄位可對應），下拉選單只是把可選值收斂成後端目前有效的門市名稱清單，`<select v-model="storePickupForm.storeInfo">` 的 `value` 直接綁 `name`、不是 `code`。
+
+`OrderRecipientSection.vue` 新增：
+
+- `storeOptions` / `storeListState`（`idle` / `loading` / `loaded` / `error`）：`loadStoreOptions()` 呼叫 `GET /api/public/stores`，在 `startEditing()` 進入編輯模式時觸發（惰性載入、以 `storeListState` 擋重複呼叫），不在元件掛載當下就抓，避免使用者根本沒點編輯就多打一次 API。
+- `storeSelectOptions`：把既有（可能是舊資料裡不在門市清單內的自由文字）`storePickupForm.storeInfo` 併入選項清單，避免使用者一打開編輯表單就看到下拉選單空白、實際上底層欄位是有值的。
+- 門市清單載入失敗時（`storeListState === 'error'`），退回原本的純文字輸入框並顯示提示文案（`order.recipient.storeLoadError`），確保 API 掛掉時使用者仍能手動輸入完成編輯，不會被下拉選單卡住。
+
 ## 不在此規格範圍內
 
 - 服務單（收購/寄賣）收件資訊——後端資料模型本身不支援，非本次範圍。

@@ -91,6 +91,48 @@ const pickupForm = reactive<{ location: string }>({ location: '' })
 // 從載入資料原樣保留，v1 表單不編輯，送出時原樣帶回，避免覆蓋成 null。
 let pickupTimeOnLoad: string | null = null
 
+// ---- 門市下拉選單（僅 STORE_PICKUP 使用）----
+// 後端 /api/public/stores 只回傳 code/name，這裡下拉選單挑的是 name，
+// 送到 PATCH .../delivery 的 deliveryInfo.storeInfo 一律是純文字店名，
+// 不會送出 code（後端該欄位本來就只存純文字，見設計文件）。
+// 此端點掛在 /api/public/ 前綴下且實測不需帶 JWT 即可存取，因此用一般
+// axios（未帶 Authorization），跟 sessionHttp 的訂單相關呼叫區分開來。
+interface StoreOption {
+  code: string
+  name: string
+}
+const storeOptions = ref<StoreOption[]>([])
+const storeListState = ref<'idle' | 'loading' | 'loaded' | 'error'>('idle')
+
+async function loadStoreOptions() {
+  if (storeListState.value === 'loading' || storeListState.value === 'loaded') return
+  storeListState.value = 'loading'
+  try {
+    const response = await axios.get('/api/public/stores')
+    if (response.data && response.data.success) {
+      storeOptions.value = response.data.data ?? []
+      storeListState.value = 'loaded'
+    } else {
+      storeListState.value = 'error'
+    }
+  } catch (err) {
+    console.error('Failed to load store list:', err)
+    storeListState.value = 'error'
+  }
+}
+
+// 舊資料的 storeInfo 可能是先前手動輸入、不在門市清單裡的純文字，把它併進
+// 選項讓 <select> 有東西可以顯示成「目前選中」，而不是使用者一打開編輯表單
+// 就看到空白的下拉選單（即使底層的 storeInfo 其實有值）。
+const storeSelectOptions = computed(() => {
+  const names = storeOptions.value.map((s) => s.name)
+  const current = storePickupForm.storeInfo
+  if (current && !names.includes(current)) {
+    return [current, ...names]
+  }
+  return names
+})
+
 function clearFieldErrors() {
   Object.keys(fieldErrors).forEach((key) => delete fieldErrors[key])
 }
@@ -98,6 +140,9 @@ function clearFieldErrors() {
 function startEditing() {
   formError.value = ''
   clearFieldErrors()
+  // 進編輯模式就先抓門市清單，這樣使用者切到「超商取貨」分頁時清單通常已經
+  // 載好；loadStoreOptions() 內部有 idle/loading/loaded 狀態擋重複呼叫。
+  void loadStoreOptions()
 
   const method = props.detail.deliveryMethod ?? 'HOME_DELIVERY'
   formMethod.value = method
@@ -357,12 +402,25 @@ async function handleSave() {
       <div v-else-if="formMethod === 'STORE_PICKUP'" class="space-y-4">
         <div>
           <label class="font-label-caps text-xs text-secondary uppercase tracking-wider block mb-1">{{ $t('order.recipient.fields.storeInfo') }}</label>
-          <input
+          <select
+            v-if="storeListState !== 'error'"
             v-model="storePickupForm.storeInfo"
-            type="text"
-            class="w-full border px-3 py-2 font-body-md text-sm text-on-surface focus:outline-none focus:border-primary"
+            :disabled="storeListState === 'loading'"
+            class="w-full border px-3 py-2 font-body-md text-sm text-on-surface bg-white focus:outline-none focus:border-primary disabled:opacity-50"
             :class="fieldErrors.storeInfo ? 'border-error' : 'border-outline-variant/30'"
-          />
+          >
+            <option value="" disabled>{{ storeListState === 'loading' ? $t('order.recipient.storeLoading') : $t('order.recipient.storePlaceholder') }}</option>
+            <option v-for="name in storeSelectOptions" :key="name" :value="name">{{ name }}</option>
+          </select>
+          <template v-else>
+            <input
+              v-model="storePickupForm.storeInfo"
+              type="text"
+              class="w-full border px-3 py-2 font-body-md text-sm text-on-surface focus:outline-none focus:border-primary"
+              :class="fieldErrors.storeInfo ? 'border-error' : 'border-outline-variant/30'"
+            />
+            <p class="font-body-md text-xs text-primary mt-1">{{ $t('order.recipient.storeLoadError') }}</p>
+          </template>
         </div>
         <div>
           <label class="font-label-caps text-xs text-secondary uppercase tracking-wider block mb-1">{{ $t('order.recipient.fields.recipientName') }}</label>
