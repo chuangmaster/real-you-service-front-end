@@ -193,10 +193,12 @@ function validate(): boolean {
   return valid
 }
 
-// 盡力而為：呼叫端（handleSave 的 catch 區塊）已經在呼叫這裡之前設定好自己的
-// formError，重抓最新資料只是錦上添花。若這裡本身失敗（網路異常、JWT 過期等），
-// 不應該讓例外往外傳導致呼叫端後續的收尾動作（例如 ORDER_NOT_EDITABLE 分支的
-// `editing.value = false`）被跳過，因此在此吞掉例外並僅記錄 log。
+// 盡力而為：呼叫端已經在呼叫這裡之前設定好自己要顯示的狀態（成功時準備退出
+// 編輯模式；409/422 分支已設定好自己的 formError），重抓最新資料只是確保畫面
+// 呈現的是伺服器真正落地的資料，而非直接信任回應 body。若這裡本身失敗（網路
+// 異常、JWT 過期等），不應該讓例外往外傳導致呼叫端後續的收尾動作（例如
+// ORDER_NOT_EDITABLE 分支的 `editing.value = false`）被跳過，因此在此吞掉例外
+// 並僅記錄 log。
 async function refetchDetail(): Promise<void> {
   try {
     const response = await sessionHttp.get(`/api/public/orders/sales/${props.orderId}`)
@@ -227,18 +229,11 @@ async function handleSave() {
     )
 
     if (response.data && response.data.success) {
-      const updated = response.data.data as {
-        deliveryMethod: DeliveryMethod
-        deliveryInfo: DeliveryInfo
-        version: number
-      }
-      emit('updated', {
-        orderStatus: props.detail.orderStatus,
-        shippingStatus: props.detail.shippingStatus,
-        deliveryMethod: updated.deliveryMethod,
-        deliveryInfo: updated.deliveryInfo,
-        version: updated.version
-      })
+      // 不直接信任 PATCH 回應 body 拼出畫面要顯示的 detail——改成重新
+      // GET 一次，確保畫面顯示的是伺服器實際落地後的資料（PATCH 回應與
+      // 實際落地結果不一致時，直接信任回應 body 會讓畫面顯示錯誤的舊值，
+      // 使用者得手動重新整理整個頁面才會看到正確內容）。
+      await refetchDetail()
       editing.value = false
     } else {
       formError.value = t('order.recipient.errors.generic')

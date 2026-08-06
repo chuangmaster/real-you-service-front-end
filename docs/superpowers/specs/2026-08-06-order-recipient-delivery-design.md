@@ -191,6 +191,12 @@ interface SalesOrderDeliveryDetail {
    - 非 `PLACED` 或 `shippingStatus === 'SHIPPED'` 的銷售訂單 → 應顯示收件資訊但無編輯按鈕
    - 服務單（`orderKind === 'Service'`） → 完全不顯示收件資訊區塊
 
+## 後續調整（2026-08-06）
+
+實際使用時發現：PATCH 成功（200）後直接信任回應 body 拼出畫面顯示的 `detail`，遇到回應內容與伺服器實際落地結果不一致的情況（例如 `deliveryInfo` 某個欄位在回應裡是舊值/空值）時，畫面會顯示錯誤的資訊，使用者得手動重新整理整個頁面才會看到正確內容——這對一個 SPA 來說不是使用者該承擔的成本。
+
+因此把成功分支也改成呼叫既有的 `refetchDetail()`（重新 `GET /api/public/orders/sales/{orderId}`），跟 409 `VERSION_CONFLICT` 分支使用同一套「不信任回應 body、以重新 GET 的結果為準」邏輯，不再直接用 `UpdateOrderDeliveryResponse` 拼本地 `detail`。多付出的成本是每次儲存成功都多一次 GET 請求，換來的是畫面永遠反映伺服器當下真正的資料，不需要使用者自行重新整理頁面。
+
 ## 不在此規格範圍內
 
 - 服務單（收購/寄賣）收件資訊——後端資料模型本身不支援，非本次範圍。
