@@ -10,6 +10,7 @@ import { sessionHttp, useCustomerSession } from '../composables/useCustomerSessi
 import { parseSalesOrderDeliveryDetail, type SalesOrderDeliveryDetail } from '../types/orderDelivery'
 
 interface OrderItem {
+  inventoryItemId: string | null
   brand: string
   style: string
   imageUrl: string | null
@@ -344,7 +345,19 @@ onMounted(async () => {
               <img v-if="orderItem.imageUrl" :src="orderItem.imageUrl" :alt="orderItem.style" class="w-full h-full object-cover" />
               <span v-else class="material-symbols-outlined text-secondary text-[24px]">inventory_2</span>
             </div>
-            <div class="flex-grow">
+            <!-- inventoryItemId 可能是 null（後端 PublicOrderItemResult 該欄位為 nullable
+                 uuid，例如服務單品項本來就沒有對應的 inventory 紀錄）——只有拿得到 id
+                 才做成連到鑑定頁面（/product/:id，即 ProductDetailView）的連結，
+                 否則維持原本純文字顯示，避免連到一個註定 404 的頁面。 -->
+            <router-link
+              v-if="orderItem.inventoryItemId"
+              :to="{ name: 'product-detail', params: { id: orderItem.inventoryItemId } }"
+              class="flex-grow hover:opacity-70 transition-opacity"
+            >
+              <p class="font-title-lg text-sm text-on-surface underline decoration-outline-variant underline-offset-2">{{ orderItem.brand }}</p>
+              <p class="font-body-md text-xs text-secondary">{{ orderItem.style }}</p>
+            </router-link>
+            <div v-else class="flex-grow">
               <p class="font-title-lg text-sm text-on-surface">{{ orderItem.brand }}</p>
               <p class="font-body-md text-xs text-secondary">{{ orderItem.style }}</p>
             </div>
