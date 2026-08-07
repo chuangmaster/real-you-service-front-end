@@ -5,8 +5,12 @@ import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import liff from '@line/liff'
 import OrderStatusBadge from '../components/OrderStatusBadge.vue'
+import OrderRecipientSection from '../components/OrderRecipientSection.vue'
+import { sessionHttp, useCustomerSession } from '../composables/useCustomerSession'
+import { parseSalesOrderDeliveryDetail, type SalesOrderDeliveryDetail } from '../types/orderDelivery'
 
 interface OrderItem {
+  inventoryItemId: string | null
   brand: string
   style: string
   imageUrl: string | null
@@ -14,6 +18,8 @@ interface OrderItem {
 }
 
 interface OrderSummary {
+  orderId: string
+  orderKind: 'Service' | 'Sales'
   orderNumber: string
   orderKindDisplay: string
   status: string
@@ -78,23 +84,24 @@ const fetchOrderSummary = async () => {
   }
 }
 
-// LIFF state — initialized on mount, in parallel with the summary fetch.
-// A failure here doesn't block viewing the order summary; it only means
-// any bind attempt (automatic or manual) later falls back to showing the
-// manual button.
-const liffReady = ref(false)
+// LIFF 登入狀態與客戶授權憑證換發，皆改由共用的 useCustomerSession 處理
+// （見 specs/001-liff-jwt-login/）。ensureSession() 內部已包含 liff.init()，
+// 這裡不再自行呼叫，避免重複初始化。
+const { sessionReady, isLiffLoggedIn, exchangeError, ensureSession, login, relogin } = useCustomerSession()
+// exchangeError.code 屬於這三種時，代表「重新登入 LINE」可以解決問題，
+// 對應顯示同一顆登入按鈕；NOT_BOUND（尚未綁定）與 kind: 'service'
+// （服務類錯誤，code 為 undefined）不在此列，前者要靠綁定流程解決，
+// 後者只能重試。見
+// docs/superpowers/specs/2026-08-07-liff-session-recovery-design.md。
+const RELOGIN_CODES = ['INVALID_LINE_TOKEN', 'TOKEN_INVALIDATED', 'NOT_LOGGED_IN']
+const sessionCanRelogin = computed(() => {
+  // 用局部變數承接後再判斷，避免 exchangeError.value?.code !== undefined
+  // 與後續 exchangeError.value.code 是兩個不同的存取表達式，TypeScript
+  // 無法把後者的 exchangeError.value 窄化為非 null 而在型別檢查時報錯。
+  const code = exchangeError.value?.code
+  return code !== undefined && RELOGIN_CODES.includes(code)
+})
 const isInLiffClient = ref(false)
-
-const initLiff = async () => {
-  try {
-    await liff.init({ liffId: import.meta.env.VITE_LIFF_ID })
-    liffReady.value = true
-    isInLiffClient.value = liff.isInClient()
-  } catch (err) {
-    console.error('Failed to initialize LIFF:', err)
-    liffReady.value = false
-  }
-}
 
 const closeLiffWindow = () => {
   liff.closeWindow()
@@ -104,23 +111,70 @@ const closeLiffWindow = () => {
 const binding = ref(false)
 const bindError = ref('')
 const autoBindInProgress = ref(false)
+// INVALID_LINE_TOKEN 時，「再點一次原本的綁定按鈕」無法解決問題（會用
+// 同一顆過期 token 再送一次、再失敗一次），需要引導使用者重新登入 LINE，
+// 見 docs/superpowers/specs/2026-08-07-liff-session-recovery-design.md 死路 C。
+const bindNeedsRelogin = ref(false)
+
+// POST /api/public/orders/bind 失敗時的錯誤碼 → 文案對照，供 handleBind（手動點擊）
+// 與 attemptAutoBind（靜默自動綁定）共用，避免兩處各自維護一份相同的對照表。
+const resolveBindErrorMessage = (code: string | undefined) => {
+  switch (code) {
+    case 'INVALID_LINE_TOKEN':
+      return t('order.bind.errors.invalidLineToken')
+    case 'LINE_ALREADY_BOUND':
+      return t('order.bind.errors.lineAlreadyBound')
+    case 'CUSTOMER_ALREADY_BOUND':
+      return t('order.bind.errors.customerAlreadyBound')
+    default:
+      return t('order.errorServer')
+  }
+}
+
+// LINE_ALREADY_BOUND / CUSTOMER_ALREADY_BOUND：換一個 LINE 帳號或再點一次按鈕
+// 都無法解決的永久性衝突，attemptAutoBind 靜默重試時如果遇到這兩種錯誤，
+// 就不再照舊靜默吞掉，而是直接顯示錯誤（見
+// docs/superpowers/specs/2026-07-25-order-auto-bind-design.md 的後續調整）。
+const PERMANENT_BIND_CONFLICT_CODES = ['LINE_ALREADY_BOUND', 'CUSTOMER_ALREADY_BOUND']
+
+// Recipient/delivery detail state — only fetched for bound Sales orders once
+// the customer has a valid session JWT. Silent-failure by design, same as
+// attemptAutoBind's non-404 failures: the section just doesn't appear.
+// See docs/superpowers/specs/2026-08-06-order-recipient-delivery-design.md.
+const deliveryDetail = ref<SalesOrderDeliveryDetail | null>(null)
+
+const maybeFetchDeliveryDetail = async () => {
+  if (!summary.value) return
+  if (summary.value.orderKind !== 'Sales') return
+  if (!summary.value.isBound || !sessionReady.value) return
+
+  try {
+    const response = await sessionHttp.get(`/api/public/orders/sales/${summary.value.orderId}`)
+    if (response.data && response.data.success) {
+      deliveryDetail.value = parseSalesOrderDeliveryDetail(response.data.data)
+    }
+  } catch (err) {
+    console.error('Failed to load delivery detail:', err)
+  }
+}
 
 const handleBind = async () => {
   if (binding.value || !summary.value) return
 
   bindError.value = ''
+  bindNeedsRelogin.value = false
 
-  if (!liffReady.value) {
+  if (exchangeError.value?.kind === 'service') {
     bindError.value = t('order.bind.errorLiffUnavailable')
     return
   }
 
   binding.value = true
   try {
-    if (!liff.isLoggedIn()) {
-      // Redirects the whole page to LINE Login and back to this same URL
-      // (including the `t` query param); execution does not continue past this call.
-      liff.login({ redirectUri: window.location.href })
+    if (!isLiffLoggedIn.value) {
+      // 導向整頁的 LINE 登入，登入完成後導回同一個 URL（含 `t` query param）；
+      // 執行不會繼續往下走。
+      login()
       return
     }
 
@@ -132,6 +186,12 @@ const handleBind = async () => {
 
     if (response.data && response.data.success) {
       summary.value.isBound = true
+      // 綁定前的 ensureSession() 很可能因客戶當時尚未綁定而以 NOT_BOUND
+      // 失敗、sessionReady 停留在 false；綁定成功後客戶已可換發憑證，
+      // 需重新呼叫一次才能讓 maybeFetchDeliveryDetail() 真正抓到資料。
+      ensureSession()
+        .then(() => maybeFetchDeliveryDetail())
+        .catch((err) => console.error('Failed to refresh session after bind:', err))
     } else {
       bindError.value = t('order.errorServer')
     }
@@ -145,17 +205,12 @@ const handleBind = async () => {
         // share token itself is no longer valid.
         summary.value = null
         error.value = t('order.errorInvalidLink')
-      } else if (code === 'INVALID_LINE_TOKEN') {
-        bindError.value = t('order.bind.errors.invalidLineToken')
-      } else if (code === 'LINE_ALREADY_BOUND') {
-        bindError.value = t('order.bind.errors.lineAlreadyBound')
-      } else if (code === 'CUSTOMER_ALREADY_BOUND') {
-        bindError.value = t('order.bind.errors.customerAlreadyBound')
       } else {
-        bindError.value = t('order.errorServer')
+        bindError.value = resolveBindErrorMessage(code)
+        bindNeedsRelogin.value = code === 'INVALID_LINE_TOKEN'
       }
     } else {
-      bindError.value = t('order.errorServer')
+      bindError.value = resolveBindErrorMessage(undefined)
     }
   } finally {
     binding.value = false
@@ -168,7 +223,7 @@ const handleBind = async () => {
 // see docs/superpowers/specs/2026-07-25-order-auto-bind-design.md.
 const attemptAutoBind = async () => {
   if (!summary.value || summary.value.isBound) return
-  if (!liffReady.value || !liff.isLoggedIn()) return
+  if (!isLiffLoggedIn.value) return
 
   autoBindInProgress.value = true
   try {
@@ -180,6 +235,11 @@ const attemptAutoBind = async () => {
 
     if (response.data && response.data.success) {
       summary.value.isBound = true
+      // 理由同 handleBind：綁定前的 ensureSession() 很可能因尚未綁定而失敗，
+      // 這裡需重新呼叫一次才能讓 maybeFetchDeliveryDetail() 真正抓到資料。
+      ensureSession()
+        .then(() => maybeFetchDeliveryDetail())
+        .catch((err) => console.error('Failed to refresh session after bind:', err))
     }
   } catch (err) {
     if (axios.isAxiosError(err) && err.response && err.response.status === 404) {
@@ -188,9 +248,25 @@ const attemptAutoBind = async () => {
       summary.value = null
       error.value = t('order.errorInvalidLink')
     } else {
-      // Silent by design: a failed background attempt just falls back to
-      // showing the manual bind button, with no error copy.
-      console.error('Silent auto-bind failed:', err)
+      const code = axios.isAxiosError(err) ? err.response?.data?.code : undefined
+      if (code === 'INVALID_LINE_TOKEN') {
+        // 靜默重試無法解決 ID Token 已過期的問題（會一直用同一顆過期
+        // token 再試），需要使用者重新登入，因此比照
+        // PERMANENT_BIND_CONFLICT_CODES 改為顯示錯誤而非吞掉，並將手動
+        // 綁定按鈕切換成重新登入按鈕。見
+        // docs/superpowers/specs/2026-08-07-liff-session-recovery-design.md
+        // 死路 C。
+        bindError.value = resolveBindErrorMessage(code)
+        bindNeedsRelogin.value = true
+      } else if (code && PERMANENT_BIND_CONFLICT_CODES.includes(code)) {
+        // 重試（無論是靜默重試還是使用者再點一次按鈕）都無法解決的永久性衝突，
+        // 不再照原設計靜默吞掉，直接顯示錯誤讓使用者知道要聯絡客服。
+        bindError.value = resolveBindErrorMessage(code)
+      } else {
+        // 其餘暫時性錯誤（網路/伺服器錯誤等）維持原本靜默設計：
+        // 只記錄 console.error，退回顯示手動綁定按鈕讓使用者可以重試。
+        console.error('Silent auto-bind failed:', err)
+      }
     }
   } finally {
     autoBindInProgress.value = false
@@ -214,8 +290,14 @@ const formattedOrderDate = computed(() => {
 })
 
 onMounted(async () => {
-  await Promise.all([fetchOrderSummary(), initLiff()])
+  await Promise.all([fetchOrderSummary(), ensureSession()])
+  try {
+    isInLiffClient.value = liff.isInClient()
+  } catch {
+    isInLiffClient.value = false
+  }
   attemptAutoBind()
+  maybeFetchDeliveryDetail()
 })
 </script>
 
@@ -282,34 +364,100 @@ onMounted(async () => {
       <div class="mb-8">
         <h2 class="font-label-caps text-xs text-secondary uppercase tracking-wider mb-4">{{ $t('order.summary.itemsHeading') }}</h2>
         <div class="space-y-3">
-          <div
-            v-for="(orderItem, index) in summary.items"
-            :key="index"
-            class="flex items-center gap-4 bg-surface-container-low p-4"
-          >
-            <div class="w-14 h-14 bg-surface-container overflow-hidden flex-shrink-0 flex items-center justify-center">
-              <img v-if="orderItem.imageUrl" :src="orderItem.imageUrl" :alt="orderItem.style" class="w-full h-full object-cover" />
-              <span v-else class="material-symbols-outlined text-secondary text-[24px]">inventory_2</span>
+          <template v-for="(orderItem, index) in summary.items" :key="index">
+            <!-- inventoryItemId 可能是 null（後端 PublicOrderItemResult 該欄位為 nullable
+                 uuid，例如服務單品項本來就沒有對應的 inventory 紀錄）——只有拿得到 id
+                 才把整列做成連到鑑定頁面（/product/:id，即 ProductDetailView）的連結，
+                 否則維持原本純文字顯示，避免連到一個註定 404 的頁面。整列可點擊
+                 （而非只有商品名稱文字）搭配右側 chevron 圖示，比純文字加底線更明確
+                 地提示「這裡可以點」，熱區也更大、更適合手機瀏覽器操作。 -->
+            <router-link
+              v-if="orderItem.inventoryItemId"
+              :to="{ name: 'product-detail', params: { id: orderItem.inventoryItemId } }"
+              class="flex items-center gap-4 bg-surface-container-low p-4 hover:bg-surface-container active:bg-surface-container transition-colors"
+            >
+              <div class="w-14 h-14 bg-surface-container overflow-hidden flex-shrink-0 flex items-center justify-center">
+                <img v-if="orderItem.imageUrl" :src="orderItem.imageUrl" :alt="orderItem.style" class="w-full h-full object-cover" />
+                <span v-else class="material-symbols-outlined text-secondary text-[24px]">inventory_2</span>
+              </div>
+              <div class="flex-grow">
+                <p class="font-title-lg text-sm text-on-surface">{{ orderItem.brand }}</p>
+                <p class="font-body-md text-xs text-secondary">{{ orderItem.style }}</p>
+              </div>
+              <p class="font-data-mono text-sm text-on-surface">{{ formatCurrency(orderItem.amount) }}</p>
+              <span class="material-symbols-outlined text-secondary text-[20px] flex-shrink-0">chevron_right</span>
+            </router-link>
+            <div v-else class="flex items-center gap-4 bg-surface-container-low p-4">
+              <div class="w-14 h-14 bg-surface-container overflow-hidden flex-shrink-0 flex items-center justify-center">
+                <img v-if="orderItem.imageUrl" :src="orderItem.imageUrl" :alt="orderItem.style" class="w-full h-full object-cover" />
+                <span v-else class="material-symbols-outlined text-secondary text-[24px]">inventory_2</span>
+              </div>
+              <div class="flex-grow">
+                <p class="font-title-lg text-sm text-on-surface">{{ orderItem.brand }}</p>
+                <p class="font-body-md text-xs text-secondary">{{ orderItem.style }}</p>
+              </div>
+              <p class="font-data-mono text-sm text-on-surface">{{ formatCurrency(orderItem.amount) }}</p>
             </div>
-            <div class="flex-grow">
-              <p class="font-title-lg text-sm text-on-surface">{{ orderItem.brand }}</p>
-              <p class="font-body-md text-xs text-secondary">{{ orderItem.style }}</p>
-            </div>
-            <p class="font-data-mono text-sm text-on-surface">{{ formatCurrency(orderItem.amount) }}</p>
-          </div>
+          </template>
         </div>
       </div>
 
+      <OrderRecipientSection
+        v-if="deliveryDetail"
+        :detail="deliveryDetail"
+        :order-id="summary.orderId"
+        @updated="deliveryDetail = $event"
+      />
+
       <!-- BIND SECTION -->
       <div v-if="!summary.isBound && !autoBindInProgress" class="bg-white border border-outline-variant/30 shadow-sm p-6 text-center">
-        <p class="font-body-md text-sm text-secondary mb-5">{{ $t('order.bind.prompt') }}</p>
-        <p v-if="bindError" class="font-body-md text-xs text-primary mb-4">{{ bindError }}</p>
+        <!-- 已經顯示錯誤時，「同意綁定」提示文字沒有意義（甚至矛盾），改顯示錯誤訊息即可 -->
+        <p v-if="!bindError" class="font-body-md text-sm text-secondary mb-5">{{ $t('order.bind.prompt') }}</p>
+        <p v-else class="font-body-md text-xs text-primary mb-4">{{ bindError }}</p>
         <button
           class="w-full bg-primary text-white px-8 py-4 font-label-caps text-label-caps hover:bg-primary-container transition-colors duration-300 tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="binding"
-          @click="handleBind"
+          @click="bindNeedsRelogin ? relogin() : handleBind()"
         >
-          {{ binding ? $t('order.bind.submitting') : $t('order.bind.button') }}
+          {{ binding ? $t('order.bind.submitting') : bindNeedsRelogin ? $t('order.session.loginButton') : $t('order.bind.button') }}
+        </button>
+      </div>
+
+      <!-- CUSTOMER SESSION EXCHANGE ERROR（客戶授權憑證換發失敗，FR-006）
+           擇一顯示：綁定區塊優先，避免使用者尚未綁定時同時看到「請先綁定」
+           與這裡的換發失敗訊息（兩者語意重疊或互相矛盾）。綁定完成、或自動
+           靜默綁定不在進行中之後，才輪到這裡呈現換發失敗的狀態。
+           deliveryDetail 存在時（收件資訊表單已顯示）額外抑制這個區塊——
+           表單儲存 401 時會在表單內自己顯示重新登入提示（見
+           OrderRecipientSection.vue），這裡若同時顯示會出現兩顆重複的
+           「重新登入 LINE」按鈕，見
+           docs/superpowers/specs/2026-08-07-liff-session-recovery-design.md
+           第二節「重複入口的處理」。 -->
+      <div v-else-if="exchangeError && !deliveryDetail" class="bg-white border border-outline-variant/30 shadow-sm p-6 text-center mt-4">
+        <p class="font-body-md text-sm text-primary mb-4">
+          {{
+            exchangeError.code === 'NOT_BOUND'
+              ? $t('order.session.bindRequired')
+              : exchangeError.code === 'NOT_LOGGED_IN'
+                ? $t('order.session.loginRequired')
+                : exchangeError.kind === 'identity'
+                  ? $t('order.session.errorIdentity')
+                  : $t('order.session.errorService')
+          }}
+        </p>
+        <button
+          v-if="sessionCanRelogin"
+          class="w-full bg-primary text-white px-8 py-4 font-label-caps text-label-caps hover:bg-primary-container transition-colors duration-300 tracking-widest"
+          @click="relogin"
+        >
+          {{ $t('order.session.loginButton') }}
+        </button>
+        <button
+          v-else-if="exchangeError.kind === 'service'"
+          class="w-full bg-primary text-white px-8 py-4 font-label-caps text-label-caps hover:bg-primary-container transition-colors duration-300 tracking-widest"
+          @click="ensureSession"
+        >
+          {{ $t('order.session.retry') }}
         </button>
       </div>
     </div>

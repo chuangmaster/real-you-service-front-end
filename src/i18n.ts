@@ -91,6 +91,46 @@ const messages = {
           lineAlreadyBound: 'This LINE account is already bound to another customer. Please contact customer service for help.',
           customerAlreadyBound: 'This customer has already completed LINE binding. To switch accounts, please contact your sales representative.'
         }
+      },
+      session: {
+        errorIdentity: 'LINE identity verification failed. Please log in to LINE again.',
+        errorService: 'Service is temporarily unavailable. Please try again later.',
+        retry: 'RETRY',
+        bindRequired: 'This LINE account has not been bound yet. Please complete binding via your order link first.',
+        loginRequired: 'Please log in to LINE to continue.',
+        loginButton: 'LOG IN TO LINE'
+      },
+      recipient: {
+        title: 'Recipient Information',
+        methods: {
+          HOME_DELIVERY: 'Home Delivery',
+          STORE_PICKUP: 'Convenience Store Pickup',
+          PICKUP: 'In-Store Pickup'
+        },
+        fields: {
+          recipientName: 'Recipient Name',
+          recipientPhone: 'Recipient Phone',
+          recipientAddress: 'Recipient Address',
+          storeInfo: 'Store Info',
+          location: 'Pickup Location'
+        },
+        storePlaceholder: 'Select a store',
+        storeLoading: 'Loading...',
+        storeLoadError: 'Failed to load the store list. Please enter the store name directly.',
+        editButton: 'EDIT',
+        saveButton: 'SAVE',
+        cancelButton: 'CANCEL',
+        saving: 'SAVING...',
+        errors: {
+          versionConflict: 'This information was just updated. Please review the latest details and submit again.',
+          notEditable: 'This order can no longer have its recipient information changed.',
+          invalidInfo: 'Please make sure all recipient information is filled in.',
+          generic: 'Something went wrong. Please try again later.',
+          sessionExpired: 'Your LINE session has expired. Please log in again to save your changes.'
+        },
+        validation: {
+          required: 'This field is required.'
+        }
       }
     }
   },
@@ -183,6 +223,46 @@ const messages = {
           invalidLineToken: 'LINE 登入驗證失敗，請重新登入 LINE 後再試一次。',
           lineAlreadyBound: '此 LINE 帳號已綁定給另一位客戶，請聯絡客服協助處理。',
           customerAlreadyBound: '此客戶已完成過綁定，如需更換 LINE 帳號請聯絡業務/客服協助。'
+        }
+      },
+      session: {
+        errorIdentity: 'LINE 身分驗證失敗，請重新登入 LINE。',
+        errorService: '服務暫時無法使用，請稍後再試。',
+        retry: '重試',
+        bindRequired: '此 LINE 帳號尚未完成綁定，請先透過訂單連結完成綁定。',
+        loginRequired: '請先登入 LINE 才能繼續。',
+        loginButton: '重新登入 LINE'
+      },
+      recipient: {
+        title: '收件資訊',
+        methods: {
+          HOME_DELIVERY: '宅配',
+          STORE_PICKUP: '超商取貨',
+          PICKUP: '門市自取'
+        },
+        fields: {
+          recipientName: '收件人姓名',
+          recipientPhone: '收件人電話',
+          recipientAddress: '收件地址',
+          storeInfo: '超商門市資訊',
+          location: '取貨地點'
+        },
+        storePlaceholder: '請選擇門市',
+        storeLoading: '載入中...',
+        storeLoadError: '門市清單載入失敗，請直接輸入門市名稱。',
+        editButton: '編輯',
+        saveButton: '儲存',
+        cancelButton: '取消',
+        saving: '儲存中...',
+        errors: {
+          versionConflict: '資料已被更新，請重新確認後再提交。',
+          notEditable: '此訂單目前狀態已無法修改收件資訊。',
+          invalidInfo: '請確認收件資訊填寫完整。',
+          generic: '發生錯誤，請稍候再試。',
+          sessionExpired: '您的 LINE 登入已過期，請重新登入後再儲存變更。'
+        },
+        validation: {
+          required: '此欄位為必填。'
         }
       }
     }
