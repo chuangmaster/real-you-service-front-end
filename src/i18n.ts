@@ -96,7 +96,9 @@ const messages = {
         errorIdentity: 'LINE identity verification failed. Please log in to LINE again.',
         errorService: 'Service is temporarily unavailable. Please try again later.',
         retry: 'RETRY',
-        bindRequired: 'This LINE account has not been bound yet. Please complete binding via your order link first.'
+        bindRequired: 'This LINE account has not been bound yet. Please complete binding via your order link first.',
+        loginRequired: 'Please log in to LINE to continue.',
+        loginButton: 'LOG IN TO LINE'
       },
       recipient: {
         title: 'Recipient Information',
@@ -123,7 +125,8 @@ const messages = {
           versionConflict: 'This information was just updated. Please review the latest details and submit again.',
           notEditable: 'This order can no longer have its recipient information changed.',
           invalidInfo: 'Please make sure all recipient information is filled in.',
-          generic: 'Something went wrong. Please try again later.'
+          generic: 'Something went wrong. Please try again later.',
+          sessionExpired: 'Your LINE session has expired. Please log in again to save your changes.'
         },
         validation: {
           required: 'This field is required.'
@@ -226,7 +229,9 @@ const messages = {
         errorIdentity: 'LINE 身分驗證失敗，請重新登入 LINE。',
         errorService: '服務暫時無法使用，請稍後再試。',
         retry: '重試',
-        bindRequired: '此 LINE 帳號尚未完成綁定，請先透過訂單連結完成綁定。'
+        bindRequired: '此 LINE 帳號尚未完成綁定，請先透過訂單連結完成綁定。',
+        loginRequired: '請先登入 LINE 才能繼續。',
+        loginButton: '重新登入 LINE'
       },
       recipient: {
         title: '收件資訊',
@@ -253,7 +258,8 @@ const messages = {
           versionConflict: '資料已被更新，請重新確認後再提交。',
           notEditable: '此訂單目前狀態已無法修改收件資訊。',
           invalidInfo: '請確認收件資訊填寫完整。',
-          generic: '發生錯誤，請稍候再試。'
+          generic: '發生錯誤，請稍候再試。',
+          sessionExpired: '您的 LINE 登入已過期，請重新登入後再儲存變更。'
         },
         validation: {
           required: '此欄位為必填。'
