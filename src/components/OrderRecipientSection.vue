@@ -192,7 +192,10 @@ function startEditing() {
 function cancelEditing() {
   editing.value = false
   formError.value = ''
-  needsRelogin.value = false
+  // 刻意不重設 needsRelogin：它只會在儲存遇到實際 401 時被設成 true，
+  // 取消編輯並不代表工作階段又活過來了。若在這裡重設，畫面上唯一的
+  // 重新登入按鈕（原本只存在於編輯表單內）會隨表單一起卸載，使用者
+  // 取消後就再也找不到任何復原入口（見最終審查發現一）。
 }
 
 // 編輯中切換收件方式：若切回訂單原本的收件方式，把原始資料重新載回表單——
@@ -375,6 +378,24 @@ async function handleSave() {
       </button>
     </div>
 
+    <!-- 工作階段過期的重新登入入口：刻意放在唯讀／編輯表單這對 v-if/v-else
+         之外，這樣無論目前處於哪個模式都會顯示——取消編輯（cancelEditing()）
+         不會清掉 needsRelogin，若按鈕仍卡在編輯表單內部，取消後就會隨表單一起
+         消失，變成頁面上唯一的復原入口整個不見（見最終審查發現一）。唯讀模式
+         下沒有 formError 可以說明按鈕為何出現，因此額外顯示一段說明文字；
+         編輯模式下 formError 已經顯示過同樣的文案（見 handleSave 401 分支），
+         這裡不重複顯示，只保留按鈕本身。 -->
+    <div v-if="needsRelogin" class="mb-6">
+      <p v-if="!editing" class="font-body-md text-xs text-primary mb-2">{{ $t('order.recipient.errors.sessionExpired') }}</p>
+      <button
+        type="button"
+        class="w-full bg-primary text-white px-6 py-3 font-label-caps text-label-caps tracking-widest hover:bg-primary-container transition-colors duration-300"
+        @click="relogin"
+      >
+        {{ $t('order.session.loginButton') }}
+      </button>
+    </div>
+
     <!-- READ-ONLY -->
     <div v-if="!editing" class="space-y-0">
       <div
@@ -493,14 +514,6 @@ async function handleSave() {
       </div>
 
       <p v-if="formError" class="font-body-md text-xs text-primary">{{ formError }}</p>
-      <button
-        v-if="needsRelogin"
-        type="button"
-        class="w-full bg-primary text-white px-6 py-3 font-label-caps text-label-caps tracking-widest hover:bg-primary-container transition-colors duration-300"
-        @click="relogin"
-      >
-        {{ $t('order.session.loginButton') }}
-      </button>
 
       <div class="flex gap-3">
         <button

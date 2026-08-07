@@ -244,15 +244,26 @@ function login(): void {
 async function relogin(): Promise<void> {
   clearStoredSession()
   sessionReady.value = false
-  const initOk = await ensureLiffInit()
-  if (!initOk) {
+  // 三個呼叫端（OrderView 的 exchangeError 區塊、綁定按鈕、
+  // OrderRecipientSection）都是 @click="relogin" 直接呼叫、不 await 也不
+  // catch，屬於 fire-and-forget。ensureLiffInit() 內部已自行 catch 並回傳
+  // false，但 liff.logout() / liff.login() 若拋出例外則無人接住，會變成
+  // unhandled rejection。這裡整體包一層 try/catch，讓任何失敗都收斂成
+  // 跟 ensureLiffInit() 失敗時一致的服務類錯誤，而不是讓例外憑空消失。
+  try {
+    const initOk = await ensureLiffInit()
+    if (!initOk) {
+      exchangeError.value = { kind: 'service' }
+      return
+    }
+    if (liff.isLoggedIn()) {
+      liff.logout()
+    }
+    liff.login({ redirectUri: window.location.href })
+  } catch (err) {
+    console.error('Failed to relogin via LIFF:', err)
     exchangeError.value = { kind: 'service' }
-    return
   }
-  if (liff.isLoggedIn()) {
-    liff.logout()
-  }
-  liff.login({ redirectUri: window.location.href })
 }
 
 export function useCustomerSession() {
