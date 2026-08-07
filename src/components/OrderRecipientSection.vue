@@ -2,7 +2,7 @@
 import { computed, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
-import { sessionHttp } from '../composables/useCustomerSession'
+import { sessionHttp, useCustomerSession } from '../composables/useCustomerSession'
 import { parseSalesOrderDeliveryDetail } from '../types/orderDelivery'
 import type {
   DeliveryMethod,
@@ -23,6 +23,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const { relogin } = useCustomerSession()
 
 const METHODS: DeliveryMethod[] = ['HOME_DELIVERY', 'STORE_PICKUP', 'PICKUP']
 
@@ -75,6 +76,10 @@ const saving = ref(false)
 const formError = ref('')
 const formMethod = ref<DeliveryMethod>('HOME_DELIVERY')
 const fieldErrors = reactive<Record<string, boolean>>({})
+// 儲存時遇到 401（憑證過期或被作廢）才會設為 true，用來在表單內顯示
+// 重新登入按鈕。見
+// docs/superpowers/specs/2026-08-07-liff-session-recovery-design.md 第四節。
+const needsRelogin = ref(false)
 
 // 各方式各自獨立的欄位緩衝區，這樣編輯過程中在方式之間切換不會互相污染。
 const homeDeliveryForm = reactive<HomeDeliveryInfo>({
@@ -171,6 +176,7 @@ function loadOriginalValuesFor(method: DeliveryMethod): boolean {
 
 function startEditing() {
   formError.value = ''
+  needsRelogin.value = false
   clearFieldErrors()
   // 進編輯模式就先抓門市清單，這樣使用者切到「門市自取」分頁時清單通常已經
   // 載好；loadStoreOptions() 內部有 idle/loading/loaded 狀態擋重複呼叫。
@@ -186,6 +192,7 @@ function startEditing() {
 function cancelEditing() {
   editing.value = false
   formError.value = ''
+  needsRelogin.value = false
 }
 
 // 編輯中切換收件方式：若切回訂單原本的收件方式，把原始資料重新載回表單——
@@ -279,6 +286,7 @@ async function refetchDetail(): Promise<void> {
 
 async function handleSave() {
   formError.value = ''
+  needsRelogin.value = false
   if (!validate()) {
     formError.value = t('order.recipient.errors.invalidInfo')
     return
@@ -329,6 +337,15 @@ async function handleSave() {
         editing.value = false
       } else if (status === 422 && code === 'INVALID_DELIVERY_INFO') {
         formError.value = t('order.recipient.errors.invalidInfo')
+      } else if (status === 401) {
+        // 客戶授權憑證於送出當下已失效（過期或被後端作廢）。sessionHttp 的
+        // response interceptor 已同步清除本地憑證並設定 exchangeError，
+        // 這裡另外顯示表單內專屬提示與重新登入按鈕，讓使用者不必往下找
+        // OrderView 下方的全域提示（該區塊在 deliveryDetail 存在時會被
+        // 抑制，見
+        // docs/superpowers/specs/2026-08-07-liff-session-recovery-design.md）。
+        formError.value = t('order.recipient.errors.sessionExpired')
+        needsRelogin.value = true
       } else {
         // 400（ValidationProblemDetails，無 code）／403／404／其他非預期狀態碼
         formError.value = t('order.recipient.errors.generic')
@@ -476,6 +493,14 @@ async function handleSave() {
       </div>
 
       <p v-if="formError" class="font-body-md text-xs text-primary">{{ formError }}</p>
+      <button
+        v-if="needsRelogin"
+        type="button"
+        class="w-full bg-primary text-white px-6 py-3 font-label-caps text-label-caps tracking-widest hover:bg-primary-container transition-colors duration-300"
+        @click="relogin"
+      >
+        {{ $t('order.session.loginButton') }}
+      </button>
 
       <div class="flex gap-3">
         <button
