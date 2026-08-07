@@ -111,6 +111,10 @@ const closeLiffWindow = () => {
 const binding = ref(false)
 const bindError = ref('')
 const autoBindInProgress = ref(false)
+// INVALID_LINE_TOKEN 時，「再點一次原本的綁定按鈕」無法解決問題（會用
+// 同一顆過期 token 再送一次、再失敗一次），需要引導使用者重新登入 LINE，
+// 見 docs/superpowers/specs/2026-08-07-liff-session-recovery-design.md 死路 C。
+const bindNeedsRelogin = ref(false)
 
 // POST /api/public/orders/bind 失敗時的錯誤碼 → 文案對照，供 handleBind（手動點擊）
 // 與 attemptAutoBind（靜默自動綁定）共用，避免兩處各自維護一份相同的對照表。
@@ -158,6 +162,7 @@ const handleBind = async () => {
   if (binding.value || !summary.value) return
 
   bindError.value = ''
+  bindNeedsRelogin.value = false
 
   if (exchangeError.value?.kind === 'service') {
     bindError.value = t('order.bind.errorLiffUnavailable')
@@ -202,6 +207,7 @@ const handleBind = async () => {
         error.value = t('order.errorInvalidLink')
       } else {
         bindError.value = resolveBindErrorMessage(code)
+        bindNeedsRelogin.value = code === 'INVALID_LINE_TOKEN'
       }
     } else {
       bindError.value = resolveBindErrorMessage(undefined)
@@ -243,12 +249,21 @@ const attemptAutoBind = async () => {
       error.value = t('order.errorInvalidLink')
     } else {
       const code = axios.isAxiosError(err) ? err.response?.data?.code : undefined
-      if (code && PERMANENT_BIND_CONFLICT_CODES.includes(code)) {
+      if (code === 'INVALID_LINE_TOKEN') {
+        // 靜默重試無法解決 ID Token 已過期的問題（會一直用同一顆過期
+        // token 再試），需要使用者重新登入，因此比照
+        // PERMANENT_BIND_CONFLICT_CODES 改為顯示錯誤而非吞掉，並將手動
+        // 綁定按鈕切換成重新登入按鈕。見
+        // docs/superpowers/specs/2026-08-07-liff-session-recovery-design.md
+        // 死路 C。
+        bindError.value = resolveBindErrorMessage(code)
+        bindNeedsRelogin.value = true
+      } else if (code && PERMANENT_BIND_CONFLICT_CODES.includes(code)) {
         // 重試（無論是靜默重試還是使用者再點一次按鈕）都無法解決的永久性衝突，
         // 不再照原設計靜默吞掉，直接顯示錯誤讓使用者知道要聯絡客服。
         bindError.value = resolveBindErrorMessage(code)
       } else {
-        // 其餘暫時性錯誤（LINE token 問題、網路/伺服器錯誤等）維持原本靜默設計：
+        // 其餘暫時性錯誤（網路/伺服器錯誤等）維持原本靜默設計：
         // 只記錄 console.error，退回顯示手動綁定按鈕讓使用者可以重試。
         console.error('Silent auto-bind failed:', err)
       }
@@ -402,9 +417,9 @@ onMounted(async () => {
         <button
           class="w-full bg-primary text-white px-8 py-4 font-label-caps text-label-caps hover:bg-primary-container transition-colors duration-300 tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="binding"
-          @click="handleBind"
+          @click="bindNeedsRelogin ? relogin() : handleBind()"
         >
-          {{ binding ? $t('order.bind.submitting') : $t('order.bind.button') }}
+          {{ binding ? $t('order.bind.submitting') : bindNeedsRelogin ? $t('order.session.loginButton') : $t('order.bind.button') }}
         </button>
       </div>
 
