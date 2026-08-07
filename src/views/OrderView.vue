@@ -87,7 +87,20 @@ const fetchOrderSummary = async () => {
 // LIFF 登入狀態與客戶授權憑證換發，皆改由共用的 useCustomerSession 處理
 // （見 specs/001-liff-jwt-login/）。ensureSession() 內部已包含 liff.init()，
 // 這裡不再自行呼叫，避免重複初始化。
-const { sessionReady, isLiffLoggedIn, exchangeError, ensureSession, login } = useCustomerSession()
+const { sessionReady, isLiffLoggedIn, exchangeError, ensureSession, login, relogin } = useCustomerSession()
+// exchangeError.code 屬於這三種時，代表「重新登入 LINE」可以解決問題，
+// 對應顯示同一顆登入按鈕；NOT_BOUND（尚未綁定）與 kind: 'service'
+// （服務類錯誤，code 為 undefined）不在此列，前者要靠綁定流程解決，
+// 後者只能重試。見
+// docs/superpowers/specs/2026-08-07-liff-session-recovery-design.md。
+const RELOGIN_CODES = ['INVALID_LINE_TOKEN', 'TOKEN_INVALIDATED', 'NOT_LOGGED_IN']
+const sessionCanRelogin = computed(() => {
+  // 用局部變數承接後再判斷，避免 exchangeError.value?.code !== undefined
+  // 與後續 exchangeError.value.code 是兩個不同的存取表達式，TypeScript
+  // 無法把後者的 exchangeError.value 窄化為非 null 而在型別檢查時報錯。
+  const code = exchangeError.value?.code
+  return code !== undefined && RELOGIN_CODES.includes(code)
+})
 const isInLiffClient = ref(false)
 
 const closeLiffWindow = () => {
@@ -398,19 +411,34 @@ onMounted(async () => {
       <!-- CUSTOMER SESSION EXCHANGE ERROR（客戶授權憑證換發失敗，FR-006）
            擇一顯示：綁定區塊優先，避免使用者尚未綁定時同時看到「請先綁定」
            與這裡的換發失敗訊息（兩者語意重疊或互相矛盾）。綁定完成、或自動
-           靜默綁定不在進行中之後，才輪到這裡呈現換發失敗的狀態。 -->
-      <div v-else-if="exchangeError" class="bg-white border border-outline-variant/30 shadow-sm p-6 text-center mt-4">
+           靜默綁定不在進行中之後，才輪到這裡呈現換發失敗的狀態。
+           deliveryDetail 存在時（收件資訊表單已顯示）額外抑制這個區塊——
+           表單儲存 401 時會在表單內自己顯示重新登入提示（見
+           OrderRecipientSection.vue），這裡若同時顯示會出現兩顆重複的
+           「重新登入 LINE」按鈕，見
+           docs/superpowers/specs/2026-08-07-liff-session-recovery-design.md
+           第二節「重複入口的處理」。 -->
+      <div v-else-if="exchangeError && !deliveryDetail" class="bg-white border border-outline-variant/30 shadow-sm p-6 text-center mt-4">
         <p class="font-body-md text-sm text-primary mb-4">
           {{
             exchangeError.code === 'NOT_BOUND'
               ? $t('order.session.bindRequired')
-              : exchangeError.kind === 'identity'
-                ? $t('order.session.errorIdentity')
-                : $t('order.session.errorService')
+              : exchangeError.code === 'NOT_LOGGED_IN'
+                ? $t('order.session.loginRequired')
+                : exchangeError.kind === 'identity'
+                  ? $t('order.session.errorIdentity')
+                  : $t('order.session.errorService')
           }}
         </p>
         <button
-          v-if="exchangeError.kind === 'service'"
+          v-if="sessionCanRelogin"
+          class="w-full bg-primary text-white px-8 py-4 font-label-caps text-label-caps hover:bg-primary-container transition-colors duration-300 tracking-widest"
+          @click="relogin"
+        >
+          {{ $t('order.session.loginButton') }}
+        </button>
+        <button
+          v-else-if="exchangeError.kind === 'service'"
           class="w-full bg-primary text-white px-8 py-4 font-label-caps text-label-caps hover:bg-primary-container transition-colors duration-300 tracking-widest"
           @click="ensureSession"
         >
