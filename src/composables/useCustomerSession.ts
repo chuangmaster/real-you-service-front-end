@@ -35,6 +35,9 @@ export interface ExchangeError {
    * - `TOKEN_INVALIDATED`：非後端回傳碼，前端自訂——受保護端點回應 401
    *   時代表 security stamp 比對失敗（例如密碼被異動），憑證雖未過期但
    *   已被後端主動作廢
+   * - `NOT_LOGGED_IN`：非後端回傳碼，前端自訂——ensureSession() 偵測到
+   *   使用者尚未登入 LINE 時設定，讓頁面知道要顯示「請重新登入」的入口
+   *   （見 docs/superpowers/specs/2026-08-07-liff-session-recovery-design.md）
    */
   code?: string
 }
@@ -191,8 +194,13 @@ async function ensureSession(): Promise<string | null> {
       return existing.token
     }
 
-    // 尚未登入 LINE：不強制導頁，僅回報狀態給頁面決定 UI（FR-002）
+    // 尚未登入 LINE：不強制導頁，僅回報狀態給頁面決定 UI（FR-002）。
+    // 設定 exchangeError 讓頁面知道「尚未登入」並提供登入入口，而非像
+    // 先前一樣靜默 return null 導致畫面完全沒有任何提示或按鈕（見
+    // docs/superpowers/specs/2026-08-07-liff-session-recovery-design.md
+    // 死路 D）。
     if (!isLiffLoggedIn.value) {
+      exchangeError.value = { kind: 'identity', code: 'NOT_LOGGED_IN' }
       return null
     }
 
@@ -218,12 +226,42 @@ function login(): void {
   liff.login({ redirectUri: window.location.href })
 }
 
+// 供頁面在偵測到 LINE 身分失效（INVALID_LINE_TOKEN / TOKEN_INVALIDATED /
+// NOT_LOGGED_IN）時呼叫，統一的「重新登入」出路，供 OrderView.vue 的
+// exchangeError 區塊、綁定按鈕、OrderRecipientSection.vue 共用。見
+// docs/superpowers/specs/2026-08-07-liff-session-recovery-design.md。
+//
+// 依序處理三件事：
+// 1. 先清除本地憑證——TOKEN_INVALIDATED 的情況下，若不清除，登入完成後
+//    ensureSession() 會經由 readStoredSession() 沿用同一顆已被後端作廢的
+//    舊憑證（該函式只檢查 expiresAt，無從得知後端已作廢），使用者重新
+//    登入了卻毫無改變。
+// 2. 若目前仍是登入狀態就先登出——INVALID_LINE_TOKEN 的情況下，LIFF
+//    session 可能仍在、只是 ID Token 過期，此時直接呼叫 login() 有機會被
+//    SDK 判定為已登入而立即導回，取得同一顆過期 token，變成第二個死路。
+// 3. 最後才呼叫 login()，帶回目前網址（含 ?t= query）。此呼叫會使整頁
+//    跳轉，函式本身不會回到呼叫端。
+async function relogin(): Promise<void> {
+  clearStoredSession()
+  sessionReady.value = false
+  const initOk = await ensureLiffInit()
+  if (!initOk) {
+    exchangeError.value = { kind: 'service' }
+    return
+  }
+  if (liff.isLoggedIn()) {
+    liff.logout()
+  }
+  liff.login({ redirectUri: window.location.href })
+}
+
 export function useCustomerSession() {
   return {
     sessionReady,
     isLiffLoggedIn,
     exchangeError,
     ensureSession,
-    login
+    login,
+    relogin
   }
 }
