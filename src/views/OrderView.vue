@@ -110,14 +110,12 @@ const closeLiffWindow = () => {
 // Binding state
 const binding = ref(false)
 const bindError = ref('')
-const autoBindInProgress = ref(false)
 // INVALID_LINE_TOKEN 時，「再點一次原本的綁定按鈕」無法解決問題（會用
 // 同一顆過期 token 再送一次、再失敗一次），需要引導使用者重新登入 LINE，
 // 見 docs/superpowers/specs/2026-08-07-liff-session-recovery-design.md 死路 C。
 const bindNeedsRelogin = ref(false)
 
-// POST /api/public/orders/bind 失敗時的錯誤碼 → 文案對照，供 handleBind（手動點擊）
-// 與 attemptAutoBind（靜默自動綁定）共用，避免兩處各自維護一份相同的對照表。
+// POST /api/public/orders/bind 失敗時的錯誤碼 → 文案對照，供 handleBind 使用。
 const resolveBindErrorMessage = (code: string | undefined) => {
   switch (code) {
     case 'INVALID_LINE_TOKEN':
@@ -131,15 +129,9 @@ const resolveBindErrorMessage = (code: string | undefined) => {
   }
 }
 
-// LINE_ALREADY_BOUND / CUSTOMER_ALREADY_BOUND：換一個 LINE 帳號或再點一次按鈕
-// 都無法解決的永久性衝突，attemptAutoBind 靜默重試時如果遇到這兩種錯誤，
-// 就不再照舊靜默吞掉，而是直接顯示錯誤（見
-// docs/superpowers/specs/2026-07-25-order-auto-bind-design.md 的後續調整）。
-const PERMANENT_BIND_CONFLICT_CODES = ['LINE_ALREADY_BOUND', 'CUSTOMER_ALREADY_BOUND']
-
 // Recipient/delivery detail state — only fetched for bound Sales orders once
-// the customer has a valid session JWT. Silent-failure by design, same as
-// attemptAutoBind's non-404 failures: the section just doesn't appear.
+// the customer has a valid session JWT. Silent-failure by design: the
+// section just doesn't appear on failure.
 // See docs/superpowers/specs/2026-08-06-order-recipient-delivery-design.md.
 const deliveryDetail = ref<SalesOrderDeliveryDetail | null>(null)
 
@@ -217,62 +209,6 @@ const handleBind = async () => {
   }
 }
 
-// Silently completes binding when we already know the customer is logged
-// into LINE, so they don't have to tap the button at all. Falls back to
-// showing the manual button whenever login state can't be confirmed —
-// see docs/superpowers/specs/2026-07-25-order-auto-bind-design.md.
-const attemptAutoBind = async () => {
-  if (!summary.value || summary.value.isBound) return
-  if (!isLiffLoggedIn.value) return
-
-  autoBindInProgress.value = true
-  try {
-    const lineIdToken = liff.getIDToken()
-    const response = await axios.post('/api/public/orders/bind', {
-      t: token.value,
-      lineIdToken
-    })
-
-    if (response.data && response.data.success) {
-      summary.value.isBound = true
-      // 理由同 handleBind：綁定前的 ensureSession() 很可能因尚未綁定而失敗，
-      // 這裡需重新呼叫一次才能讓 maybeFetchDeliveryDetail() 真正抓到資料。
-      ensureSession()
-        .then(() => maybeFetchDeliveryDetail())
-        .catch((err) => console.error('Failed to refresh session after bind:', err))
-    }
-  } catch (err) {
-    if (axios.isAxiosError(err) && err.response && err.response.status === 404) {
-      // Same "invalid link" state as the initial GET /view 404 — the
-      // share token itself is no longer valid.
-      summary.value = null
-      error.value = t('order.errorInvalidLink')
-    } else {
-      const code = axios.isAxiosError(err) ? err.response?.data?.code : undefined
-      if (code === 'INVALID_LINE_TOKEN') {
-        // 靜默重試無法解決 ID Token 已過期的問題（會一直用同一顆過期
-        // token 再試），需要使用者重新登入，因此比照
-        // PERMANENT_BIND_CONFLICT_CODES 改為顯示錯誤而非吞掉，並將手動
-        // 綁定按鈕切換成重新登入按鈕。見
-        // docs/superpowers/specs/2026-08-07-liff-session-recovery-design.md
-        // 死路 C。
-        bindError.value = resolveBindErrorMessage(code)
-        bindNeedsRelogin.value = true
-      } else if (code && PERMANENT_BIND_CONFLICT_CODES.includes(code)) {
-        // 重試（無論是靜默重試還是使用者再點一次按鈕）都無法解決的永久性衝突，
-        // 不再照原設計靜默吞掉，直接顯示錯誤讓使用者知道要聯絡客服。
-        bindError.value = resolveBindErrorMessage(code)
-      } else {
-        // 其餘暫時性錯誤（網路/伺服器錯誤等）維持原本靜默設計：
-        // 只記錄 console.error，退回顯示手動綁定按鈕讓使用者可以重試。
-        console.error('Silent auto-bind failed:', err)
-      }
-    }
-  } finally {
-    autoBindInProgress.value = false
-  }
-}
-
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat(locale.value === 'en' ? 'en-US' : 'zh-TW', {
     style: 'currency',
@@ -296,7 +232,6 @@ onMounted(async () => {
   } catch {
     isInLiffClient.value = false
   }
-  attemptAutoBind()
   maybeFetchDeliveryDetail()
 })
 </script>
@@ -410,7 +345,7 @@ onMounted(async () => {
       />
 
       <!-- BIND SECTION -->
-      <div v-if="!summary.isBound && !autoBindInProgress" class="bg-white border border-outline-variant/30 shadow-sm p-6 text-center">
+      <div v-if="!summary.isBound" class="bg-white border border-outline-variant/30 shadow-sm p-6 text-center">
         <!-- 已經顯示錯誤時，「同意綁定」提示文字沒有意義（甚至矛盾），改顯示錯誤訊息即可 -->
         <p v-if="!bindError" class="font-body-md text-sm text-secondary mb-5">{{ $t('order.bind.prompt') }}</p>
         <p v-else class="font-body-md text-xs text-primary mb-4">{{ bindError }}</p>
