@@ -96,7 +96,6 @@ const messages = {
         errorIdentity: 'LINE identity verification failed. Please log in to LINE again.',
         errorService: 'Service is temporarily unavailable. Please try again later.',
         retry: 'RETRY',
-        bindRequired: 'This LINE account has not been bound yet. Please complete binding via your order link first.',
         loginRequired: 'Please log in to LINE to continue.',
         loginButton: 'LOG IN TO LINE'
       },
@@ -229,7 +228,6 @@ const messages = {
         errorIdentity: 'LINE 身分驗證失敗，請重新登入 LINE。',
         errorService: '服務暫時無法使用，請稍後再試。',
         retry: '重試',
-        bindRequired: '此 LINE 帳號尚未完成綁定，請先透過訂單連結完成綁定。',
         loginRequired: '請先登入 LINE 才能繼續。',
         loginButton: '重新登入 LINE'
       },

@@ -360,24 +360,33 @@ onMounted(async () => {
 
       <!-- CUSTOMER SESSION EXCHANGE ERROR（客戶授權憑證換發失敗，FR-006）
            擇一顯示：綁定區塊優先，避免使用者尚未綁定時同時看到「請先綁定」
-           與這裡的換發失敗訊息（兩者語意重疊或互相矛盾）。綁定完成、或自動
-           靜默綁定不在進行中之後，才輪到這裡呈現換發失敗的狀態。
+           與這裡的換發失敗訊息（兩者語意重疊或互相矛盾）。綁定完成之後，
+           才輪到這裡呈現換發失敗的狀態。
+           排除 NOT_BOUND：BIND SECTION 用 !summary.isBound 判斷是否顯示，
+           這裡是 v-else-if，只有在 summary.isBound === true 時才會被評估
+           到，此時 exchangeError.code === 'NOT_BOUND' 代表「訂單已被另一個
+           LINE 身分綁定，目前這個身分沒綁過」，不是使用者能自行解決的狀態
+           （無法二次綁定同一張訂單），顯示「請先完成綁定」反而誤導使用者
+           以為有動作可做。見
+           docs/superpowers/specs/2026-08-08-order-bind-state-simplification-design.md
+           死路 E。
            deliveryDetail 存在時（收件資訊表單已顯示）額外抑制這個區塊——
            表單儲存 401 時會在表單內自己顯示重新登入提示（見
            OrderRecipientSection.vue），這裡若同時顯示會出現兩顆重複的
            「重新登入 LINE」按鈕，見
            docs/superpowers/specs/2026-08-07-liff-session-recovery-design.md
            第二節「重複入口的處理」。 -->
-      <div v-else-if="exchangeError && !deliveryDetail" class="bg-white border border-outline-variant/30 shadow-sm p-6 text-center mt-4">
+      <div
+        v-else-if="exchangeError && exchangeError.code !== 'NOT_BOUND' && !deliveryDetail"
+        class="bg-white border border-outline-variant/30 shadow-sm p-6 text-center mt-4"
+      >
         <p class="font-body-md text-sm text-primary mb-4">
           {{
-            exchangeError.code === 'NOT_BOUND'
-              ? $t('order.session.bindRequired')
-              : exchangeError.code === 'NOT_LOGGED_IN'
-                ? $t('order.session.loginRequired')
-                : exchangeError.kind === 'identity'
-                  ? $t('order.session.errorIdentity')
-                  : $t('order.session.errorService')
+            exchangeError.code === 'NOT_LOGGED_IN'
+              ? $t('order.session.loginRequired')
+              : exchangeError.kind === 'identity'
+                ? $t('order.session.errorIdentity')
+                : $t('order.session.errorService')
           }}
         </p>
         <button
