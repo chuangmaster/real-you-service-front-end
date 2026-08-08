@@ -81,7 +81,9 @@ BIND SECTION 的顯示條件簡化：
 
 `order.session.bindRequired` 這個 i18n key（`src/i18n.ts` 的 `en` 與 `zh-TW` 各一份）因此不再被任何地方引用，一併刪除——比照 [[2026-07-25-order-auto-bind-design]] 當初拿掉 `order.bind.success` 的作法，不留無人引用的字串。
 
-**效果**：不同 LINE 身分（或未登入狀態）開啟已被綁定的訂單連結時，畫面只會顯示訂單摘要（品項、金額、狀態），不會出現任何錯誤或登入提示——與 `fetchOrderSummary()` 本來就不需要授權憑證這件事語意一致。`useCustomerSession.ts` 內部仍會把這個情況分類為 `exchangeError.value = { kind: 'identity', code: 'NOT_BOUND' }`（分類邏輯不變），只是 `OrderView.vue` 選擇不呈現它。
+**效果**：已綁定訂單被另一個「曾登入過 LINE、但這個身分從未綁定過」的訪客開啟時（`exchangeError.code === 'NOT_BOUND'`），畫面只會顯示訂單摘要（品項、金額、狀態），不會出現任何錯誤或登入提示——與 `fetchOrderSummary()` 本來就不需要授權憑證這件事語意一致。`useCustomerSession.ts` 內部仍會把這個情況分類為 `exchangeError.value = { kind: 'identity', code: 'NOT_BOUND' }`（分類邏輯不變），只是 `OrderView.vue` 選擇不呈現它。
+
+這個排除**不涵蓋**「完全未登入 LINE」的訪客：`ensureSession()` 對未登入狀態一律先設定 `exchangeError.value = { kind: 'identity', code: 'NOT_LOGGED_IN' }`（見 `useCustomerSession.ts` 的 `!isLiffLoggedIn.value` 分支），根本不會呼叫換發端點、也就不會產生 `NOT_BOUND`。`NOT_LOGGED_IN` 不在本次排除清單內，因此已綁定訂單被完全未登入 LINE 的訪客開啟時，畫面仍會顯示「請先登入 LINE 才能繼續」與可點擊的登入按鈕——這是刻意保留的行為，因為訂單真正的綁定者本人的 LIFF session 也可能已過期到完全登出的狀態，需要保留這個復原入口，見「四、驗證方式」第 5 項。
 
 ## 三、後端影響
 
@@ -99,8 +101,9 @@ BIND SECTION 的顯示條件簡化：
 1. **未綁定訂單、已登入 LINE** → 看到綁定按鈕，點擊後成功綁定，區塊消失，收件資訊區塊（若為 Sales 訂單）隨後出現。
 2. **未綁定訂單、未登入 LINE** → 看到綁定按鈕，點擊後導轉登入；登入完成導回頁面後，仍需再點一次按鈕才會完成綁定（確認自動綁定確實已移除，非迴歸）。
 3. **已綁定訂單、以綁定當下的同一 LINE 身分開啟** → 正常看到訂單摘要與收件資訊區塊（迴歸測試，確保沒有改壞既有正常路徑）。
-4. **已綁定訂單、換一個 LINE 身分開啟（或完全未登入 LINE）** → 只看到訂單摘要，不出現任何錯誤或登入提示區塊（驗證死路 E 已修正）。
-5. **已綁定訂單、同一身分但憑證 `TOKEN_INVALIDATED` 或 `INVALID_LINE_TOKEN`**（可比照 [[2026-08-07-liff-session-recovery-design]] 的驗證方式手動製造）→ 重新登入提示區塊仍正常出現、按鈕仍可用（確認步驟二新增的排除條件沒有誤殺其他身分類錯誤）。
+4. **已綁定訂單、換一個曾登入過但未綁定過的 LINE 身分開啟** → 只看到訂單摘要，不出現任何錯誤或登入提示區塊（驗證死路 E 已修正）。
+5. **已綁定訂單、完全未登入 LINE 開啟** → 會看到「請先登入 LINE 才能繼續」提示與可點擊的登入按鈕，**不是**摘要單獨顯示。這不是死路 E 的殘留，是刻意保留的行為：`ensureSession()` 在完全未登入時會直接設 `NOT_LOGGED_IN`，根本不會走到 `NOT_BOUND` 這條路，而 `NOT_LOGGED_IN` 不在本次排除清單內——訂單真正的綁定者本人也可能是這個狀態（例如 LIFF session 過期後完全登出），需要保留這個復原入口。
+6. **已綁定訂單、同一身分但憑證 `TOKEN_INVALIDATED` 或 `INVALID_LINE_TOKEN`**（可比照 [[2026-08-07-liff-session-recovery-design]] 的驗證方式手動製造）→ 重新登入提示區塊仍正常出現、按鈕仍可用（確認步驟二新增的排除條件沒有誤殺其他身分類錯誤）。
 
 ## 不在此次範圍
 

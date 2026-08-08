@@ -89,10 +89,13 @@ const fetchOrderSummary = async () => {
 // 這裡不再自行呼叫，避免重複初始化。
 const { sessionReady, isLiffLoggedIn, exchangeError, ensureSession, login, relogin } = useCustomerSession()
 // exchangeError.code 屬於這三種時，代表「重新登入 LINE」可以解決問題，
-// 對應顯示同一顆登入按鈕；NOT_BOUND（尚未綁定）與 kind: 'service'
-// （服務類錯誤，code 為 undefined）不在此列，前者要靠綁定流程解決，
-// 後者只能重試。見
-// docs/superpowers/specs/2026-08-07-liff-session-recovery-design.md。
+// 對應顯示同一顆登入按鈕；kind: 'service'（服務類錯誤，code 為
+// undefined）不在此列，只能重試。NOT_BOUND 也不會出現在這裡——已綁定
+// 訂單被另一個未綁定身分開啟時，exchangeError 區塊本身就不會呈現
+// NOT_BOUND（見下方 exchangeError 區塊的 v-else-if 排除條件），未綁定
+// 訂單則是 BIND SECTION 優先顯示，兩種情況都輪不到這裡判斷。見
+// docs/superpowers/specs/2026-08-07-liff-session-recovery-design.md、
+// docs/superpowers/specs/2026-08-08-order-bind-state-simplification-design.md。
 const RELOGIN_CODES = ['INVALID_LINE_TOKEN', 'TOKEN_INVALIDATED', 'NOT_LOGGED_IN']
 const sessionCanRelogin = computed(() => {
   // 用局部變數承接後再判斷，避免 exchangeError.value?.code !== undefined

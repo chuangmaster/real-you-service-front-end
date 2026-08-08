@@ -416,8 +416,9 @@ Expected: build 成功完成。
 透過 `npm run dev`，需要一張**已綁定**的訂單（例如 Task 1 驗證步驟裡剛綁定的那張）：
 
 1. 用綁定當下同一個 LINE 身分重新開啟訂單頁面 → 確認訂單摘要與收件資訊區塊正常顯示（迴歸測試，確認 Step 1 的條件改動沒有影響到正常路徑）。
-2. 換一個未曾綁定過的 LINE 身分開啟同一張訂單頁面（或在無痕視窗內完全不登入 LINE 直接開啟）→ 確認畫面只顯示訂單摘要（品項、金額、狀態），**不出現**任何錯誤或登入提示區塊。
-3. 若可行，比照 `docs/superpowers/specs/2026-08-07-liff-session-recovery-design.md` 的手動驗證方式，將 `sessionStorage` 中 `realyou.customerSession` 的 `token` 改成格式合法但無效的字串（`expiresAt` 保留未來時間）後重新整理已綁定訂單頁面 → 確認 `TOKEN_INVALIDATED` 觸發的「重新登入 LINE」提示區塊仍正常出現、按鈕仍可點擊（確認 Step 1 新增的 `NOT_BOUND` 排除條件沒有連帶擋掉其他身分類錯誤）。
+2. 換一個曾登入過但未曾綁定過的 LINE 身分開啟同一張訂單頁面 → 確認畫面只顯示訂單摘要（品項、金額、狀態），**不出現**任何錯誤或登入提示區塊。
+3. 在無痕視窗內完全不登入 LINE 直接開啟同一張訂單頁面 → 確認畫面顯示「請先登入 LINE 才能繼續」提示與可點擊的登入按鈕，**不是**摘要單獨顯示（`NOT_LOGGED_IN` 不受本次排除條件影響，是刻意保留給訂單真正綁定者本人的復原入口，見 spec 的「四、驗證方式」第 5 項）。
+4. 若可行，比照 `docs/superpowers/specs/2026-08-07-liff-session-recovery-design.md` 的手動驗證方式，將 `sessionStorage` 中 `realyou.customerSession` 的 `token` 改成格式合法但無效的字串（`expiresAt` 保留未來時間）後重新整理已綁定訂單頁面 → 確認 `TOKEN_INVALIDATED` 觸發的「重新登入 LINE」提示區塊仍正常出現、按鈕仍可點擊（確認 Step 1 新增的 `NOT_BOUND` 排除條件沒有連帶擋掉其他身分類錯誤）。
 
 - [ ] **Step 9: Commit**
 
