@@ -136,6 +136,7 @@ const messages = {
       gate: {
         loading: 'SIGNING YOU IN...',
         serviceUnavailable: 'Service is temporarily unavailable. Please try again later.',
+        notBound: "This LINE account hasn't been linked to a customer profile yet. Please use the link from your order confirmation to complete linking first.",
         retry: 'RETRY'
       },
       nav: {
@@ -164,6 +165,7 @@ const messages = {
         backToList: 'BACK',
         errorGeneric: 'Something went wrong. Please try again later.',
         errorNotFound: 'This record could not be found.',
+        retry: 'RETRY',
         service: {
           title: 'Service Orders',
           empty: 'You have no service orders yet.',
@@ -324,6 +326,7 @@ const messages = {
       gate: {
         loading: '登入中...',
         serviceUnavailable: '服務暫時無法使用，請稍後再試。',
+        notBound: '此 LINE 帳號尚未綁定會員資料，請先透過訂單通知連結完成綁定。',
         retry: '重試'
       },
       nav: {
@@ -352,6 +355,7 @@ const messages = {
         backToList: '返回',
         errorGeneric: '發生錯誤，請稍候再試。',
         errorNotFound: '找不到此筆紀錄。',
+        retry: '重試',
         service: {
           title: '服務單記錄',
           empty: '目前沒有服務單記錄。',

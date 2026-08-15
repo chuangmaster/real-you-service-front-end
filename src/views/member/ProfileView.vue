@@ -58,10 +58,12 @@ async function handleSave() {
   saveError.value = ''
   try {
     const response = await sessionHttp.patch('/api/public/member/me', {
-      name: form.name,
-      phoneNumber: form.phoneNumber,
-      email: form.email,
-      residentialAddress: form.residentialAddress
+      // 空白欄位送 null（而非空字串），對應後端「未帶值的欄位保留原值」的
+      // 局部更新語意——空字串會被當成「把值清空」的明確輸入。
+      name: form.name.trim() || null,
+      phoneNumber: form.phoneNumber.trim() || null,
+      email: form.email.trim() || null,
+      residentialAddress: form.residentialAddress.trim() || null
     })
     if (response.data && response.data.success) {
       // PATCH 回應直接回傳更新後的完整 profile，不需要重新 GET。

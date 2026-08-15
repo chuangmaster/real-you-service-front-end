@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { sessionHttp } from '../../composables/useCustomerSession'
@@ -30,6 +30,12 @@ const emptyKey = computed(() =>
 // 依 orderKind 篩選、用 visibleCount 做「載入更多」的純前端分批顯示，
 // 過程中不再發送額外的網路請求。待後端補上 orderKind 篩選參數後，可以把
 // 這段改回真正依參數分頁的版本（獨立的後續任務，不在本次計畫範圍）。
+//
+// 注意：member-orders-service 與 member-orders-sales 這兩個路由在同一個
+// RouterView 深度都渲染這個元件，Vue Router 不會在兩者間切換時重新掛載
+// 元件實例（沒有 :key），所以這個元件實例是「服務單」「訂單」兩個分頁
+// 共用的——fetchOrders 只在第一次掛載時跑一次，之後切換分頁靠的是
+// orderKind 改變去重新篩選/重設分頁游標，而不是重新掛載觸發新的抓取。
 const PAGE_SIZE = 100
 const MAX_PAGES = 10
 const BATCH_SIZE = 20
@@ -77,6 +83,12 @@ function loadMore() {
   visibleCount.value += BATCH_SIZE
 }
 
+// 切換分頁（orderKind 改變）時重設「載入更多」游標，避免某一分頁展開過的
+// visibleCount 殘留到另一個分頁（元件實例是共用的，見上方註解）。
+watch(orderKind, () => {
+  visibleCount.value = BATCH_SIZE
+})
+
 const formatCurrency = (amount: number) => formatOrderCurrency(amount, locale.value)
 const formatDate = (dateStr: string) => formatOrderDate(dateStr, locale.value)
 
@@ -93,7 +105,14 @@ onMounted(fetchOrders)
 
     <div v-else-if="error" class="text-center py-16">
       <span class="material-symbols-outlined text-primary text-[48px] mb-4 block">gpp_maybe</span>
-      <p class="font-body-md text-secondary">{{ error }}</p>
+      <p class="font-body-md text-secondary mb-8">{{ error }}</p>
+      <button
+        type="button"
+        class="bg-primary text-white px-8 py-3 font-label-caps text-label-caps tracking-widest hover:bg-primary-container transition-colors duration-300"
+        @click="fetchOrders"
+      >
+        {{ $t('member.orders.retry') }}
+      </button>
     </div>
 
     <div v-else-if="filteredItems.length === 0" class="text-center py-16">

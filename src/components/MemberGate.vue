@@ -13,17 +13,55 @@ const { sessionReady, exchangeError, ensureSession, login, relogin } = useCustom
 // 情境），不與這個陣列合併。
 const RELOGIN_CODES = ['INVALID_LINE_TOKEN', 'TOKEN_INVALIDATED']
 
+// 自動導轉的 loop breaker：同一分頁內只允許自動觸發一次 login()。
+// 若導回後仍然是 NOT_LOGGED_IN（第三方 cookie 被擋、LIFF endpoint URL
+// 設定錯誤、使用者在 LINE 登入畫面取消……），代表自動導轉救不了，
+// 改為顯示錯誤卡片讓使用者手動點擊登入，避免無限重新導向迴圈。
+const LOGIN_ATTEMPTED_KEY = 'realyou.memberGateLoginAttempted'
+
 watch(exchangeError, (err) => {
   if (!err) return
   if (err.code === 'NOT_LOGGED_IN') {
-    login()
+    if (!sessionStorage.getItem(LOGIN_ATTEMPTED_KEY)) {
+      sessionStorage.setItem(LOGIN_ATTEMPTED_KEY, '1')
+      login()
+    }
+    // 已經自動導轉過一次仍回到 NOT_LOGGED_IN：不再自動呼叫 login()，
+    // 落到樣板的錯誤分支顯示手動登入按鈕。
   } else if (err.code && RELOGIN_CODES.includes(err.code)) {
     relogin()
   }
 })
 
+// 換發成功後清除 marker，避免之後真的重新進頁時被舊的失敗記錄誤判。
+watch(sessionReady, (ready) => {
+  if (ready) {
+    sessionStorage.removeItem(LOGIN_ATTEMPTED_KEY)
+  }
+})
+
+// 會觸發自動導轉、因此樣板顯示「載入中」而非錯誤卡片的 code：
+// - NOT_LOGGED_IN 且尚未自動導轉過一次
+// - INVALID_LINE_TOKEN / TOKEN_INVALIDATED（一律自動 relogin）
+// 其餘任何 exchangeError（包含 NOT_BOUND、service 類錯誤，以及任何
+// watcher 不認得的未來後端 code）都視為自動導轉救不了，顯示錯誤卡片，
+// 避免落到 loading 分支變成永久轉圈圈。
+function isAutoRedirecting(): boolean {
+  if (!exchangeError.value) return false
+  const code = exchangeError.value.code
+  if (code === 'NOT_LOGGED_IN') {
+    return !sessionStorage.getItem(LOGIN_ATTEMPTED_KEY)
+  }
+  return !!code && RELOGIN_CODES.includes(code)
+}
+
 function retry() {
   ensureSession()
+}
+
+// 手動登入迴圈中斷後的按鈕：使用者主動點擊，允許直接導轉一次。
+function manualLogin() {
+  login()
 }
 
 onMounted(() => {
@@ -37,12 +75,22 @@ onMounted(() => {
   </div>
 
   <div
-    v-else-if="exchangeError && exchangeError.kind === 'service'"
+    v-else-if="exchangeError && !isAutoRedirecting()"
     class="min-h-screen flex flex-col items-center justify-center text-center px-margin-mobile"
   >
     <span class="material-symbols-outlined text-primary text-[48px] mb-6">gpp_maybe</span>
-    <p class="font-body-md text-secondary mb-8">{{ t('member.gate.serviceUnavailable') }}</p>
+    <p class="font-body-md text-secondary mb-8">
+      {{ exchangeError.code === 'NOT_BOUND' ? t('member.gate.notBound') : t('member.gate.serviceUnavailable') }}
+    </p>
     <button
+      v-if="exchangeError.code === 'NOT_LOGGED_IN'"
+      class="bg-primary text-white px-8 py-3 font-label-caps text-label-caps tracking-widest hover:bg-primary-container transition-colors duration-300"
+      @click="manualLogin"
+    >
+      {{ t('order.session.loginButton') }}
+    </button>
+    <button
+      v-else
       class="bg-primary text-white px-8 py-3 font-label-caps text-label-caps tracking-widest hover:bg-primary-container transition-colors duration-300"
       @click="retry"
     >
