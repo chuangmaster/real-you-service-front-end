@@ -131,6 +131,62 @@ const messages = {
           required: 'This field is required.'
         }
       }
+    },
+    member: {
+      gate: {
+        loading: 'SIGNING YOU IN...',
+        serviceUnavailable: 'Service is temporarily unavailable. Please try again later.',
+        retry: 'RETRY'
+      },
+      nav: {
+        profile: 'Profile',
+        serviceOrders: 'Service Orders',
+        salesOrders: 'Orders'
+      },
+      profile: {
+        title: 'Member Center',
+        sectionTitle: 'Profile',
+        notProvided: 'Not provided',
+        editButton: 'EDIT',
+        saveButton: 'SAVE',
+        cancelButton: 'CANCEL',
+        saving: 'SAVING...',
+        errorGeneric: 'Something went wrong. Please try again later.',
+        fields: {
+          name: 'Name',
+          phoneNumber: 'Phone Number',
+          email: 'Email',
+          residentialAddress: 'Residential Address'
+        }
+      },
+      orders: {
+        loadMore: 'LOAD MORE',
+        backToList: 'BACK',
+        errorGeneric: 'Something went wrong. Please try again later.',
+        errorNotFound: 'This record could not be found.',
+        service: {
+          title: 'Service Orders',
+          empty: 'You have no service orders yet.',
+          consignmentStartDate: 'Consignment Start Date',
+          consignmentEndDate: 'Consignment End Date',
+          renewalOption: 'Renewal Option'
+        },
+        sales: {
+          title: 'Orders',
+          empty: 'You have no orders yet.',
+          paymentStatus: 'Payment Status',
+          shippingStatus: 'Shipping Status',
+          subtotalAmount: 'Subtotal',
+          shippingFee: 'Shipping Fee',
+          paymentRecords: {
+            heading: 'Payment Records',
+            paymentDate: 'Payment Date',
+            paymentAmount: 'Amount',
+            paymentMethod: 'Payment Method',
+            bankAccountLastFive: 'Account Last 5 Digits'
+          }
+        }
+      }
     }
   },
   'zh-TW': {
@@ -261,6 +317,62 @@ const messages = {
         },
         validation: {
           required: '此欄位為必填。'
+        }
+      }
+    },
+    member: {
+      gate: {
+        loading: '登入中...',
+        serviceUnavailable: '服務暫時無法使用，請稍後再試。',
+        retry: '重試'
+      },
+      nav: {
+        profile: '會員資料',
+        serviceOrders: '服務單',
+        salesOrders: '訂單'
+      },
+      profile: {
+        title: '會員中心',
+        sectionTitle: '會員資料',
+        notProvided: '未填寫',
+        editButton: '編輯',
+        saveButton: '儲存',
+        cancelButton: '取消',
+        saving: '儲存中...',
+        errorGeneric: '發生錯誤，請稍候再試。',
+        fields: {
+          name: '姓名',
+          phoneNumber: '手機號碼',
+          email: '電子郵件',
+          residentialAddress: '戶籍地址'
+        }
+      },
+      orders: {
+        loadMore: '載入更多',
+        backToList: '返回',
+        errorGeneric: '發生錯誤，請稍候再試。',
+        errorNotFound: '找不到此筆紀錄。',
+        service: {
+          title: '服務單記錄',
+          empty: '目前沒有服務單記錄。',
+          consignmentStartDate: '寄售起始日',
+          consignmentEndDate: '寄售到期日',
+          renewalOption: '續約選項'
+        },
+        sales: {
+          title: '訂單記錄',
+          empty: '目前沒有訂單記錄。',
+          paymentStatus: '付款狀態',
+          shippingStatus: '出貨狀態',
+          subtotalAmount: '小計',
+          shippingFee: '運費',
+          paymentRecords: {
+            heading: '付款紀錄',
+            paymentDate: '付款日期',
+            paymentAmount: '金額',
+            paymentMethod: '付款方式',
+            bankAccountLastFive: '帳號末五碼'
+          }
         }
       }
     }
