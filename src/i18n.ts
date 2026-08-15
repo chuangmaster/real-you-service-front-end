@@ -4,8 +4,16 @@ const messages = {
   en: {
     nav: {
       searchReport: 'Search Report',
+      memberCenter: 'Member Center',
     },
     home: {
+      tagline: 'TRUSTED LUXURY AUTHENTICATION',
+      heroTitle: 'Authenticity You Can Trust',
+      heroDescription: 'REAL YOU delivers professional luxury goods authentication, backed by years of expert inspection — giving every piece verifiable proof of authenticity.',
+      ctaSearch: 'VIEW AUTHENTICATION REPORT',
+      ctaMember: 'MEMBER CENTER'
+    },
+    identificationReport: {
       subtitle: 'Luxury Authentication Report Lookup',
       title: 'REAL YOU CERTIFICATE',
       description: 'Enter the 36-character product identification ID to view the certificate of authenticity, specifications, and inspection gallery.',
@@ -194,8 +202,16 @@ const messages = {
   'zh-TW': {
     nav: {
       searchReport: '報告檢索',
+      memberCenter: '會員中心',
     },
     home: {
+      tagline: '精品鑑定權威',
+      heroTitle: '真偽，一眼可鑑',
+      heroDescription: 'REAL YOU 提供專業精品鑑定服務，結合多年鑑定團隊經驗，為您的每一件精品建立可靠的真偽證明。',
+      ctaSearch: '查詢鑑定報告',
+      ctaMember: '會員中心'
+    },
+    identificationReport: {
       subtitle: '奢侈品鑑定報告查詢',
       title: 'REAL YOU 鑑定證書',
       description: '請輸入 36 碼商品識別 ID，即可查看商品真品證明書、詳細規格及細節檢驗圖庫。',
