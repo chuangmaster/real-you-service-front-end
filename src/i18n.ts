@@ -4,8 +4,16 @@ const messages = {
   en: {
     nav: {
       searchReport: 'Search Report',
+      memberCenter: 'Member Center',
     },
     home: {
+      tagline: 'TRANSPARENT · PROFESSIONAL · SINCERE',
+      heroTitle: 'REAL YOU',
+      heroDescription: 'Look up product authentication reports and manage your member profile and order history — REAL YOU safeguards the authenticity of every piece, earning your trust through transparency and professionalism.',
+      ctaSearch: 'VIEW AUTHENTICATION REPORT',
+      ctaMember: 'MEMBER CENTER'
+    },
+    identificationReport: {
       subtitle: 'Luxury Authentication Report Lookup',
       title: 'REAL YOU CERTIFICATE',
       description: 'Enter the 36-character product identification ID to view the certificate of authenticity, specifications, and inspection gallery.',
@@ -131,14 +139,80 @@ const messages = {
           required: 'This field is required.'
         }
       }
+    },
+    member: {
+      gate: {
+        loading: 'SIGNING YOU IN...',
+        serviceUnavailable: 'Service is temporarily unavailable. Please try again later.',
+        notBound: "This LINE account hasn't been linked to a customer profile yet. Please use the link from your order confirmation to complete linking first.",
+        retry: 'RETRY'
+      },
+      nav: {
+        profile: 'Profile',
+        serviceOrders: 'Service Orders',
+        salesOrders: 'Orders'
+      },
+      profile: {
+        title: 'Member Center',
+        sectionTitle: 'Profile',
+        notProvided: 'Not provided',
+        editButton: 'EDIT',
+        saveButton: 'SAVE',
+        cancelButton: 'CANCEL',
+        saving: 'SAVING...',
+        errorGeneric: 'Something went wrong. Please try again later.',
+        fields: {
+          name: 'Name',
+          phoneNumber: 'Phone Number',
+          email: 'Email',
+          residentialAddress: 'Residential Address'
+        }
+      },
+      orders: {
+        loadMore: 'LOAD MORE',
+        backToList: 'BACK',
+        errorGeneric: 'Something went wrong. Please try again later.',
+        errorNotFound: 'This record could not be found.',
+        retry: 'RETRY',
+        service: {
+          title: 'Service Orders',
+          empty: 'You have no service orders yet.',
+          consignmentStartDate: 'Consignment Start Date',
+          consignmentEndDate: 'Consignment End Date',
+          renewalOption: 'Renewal Option'
+        },
+        sales: {
+          title: 'Orders',
+          empty: 'You have no orders yet.',
+          paymentStatus: 'Payment Status',
+          shippingStatus: 'Shipping Status',
+          subtotalAmount: 'Subtotal',
+          shippingFee: 'Shipping Fee',
+          paymentRecords: {
+            heading: 'Payment Records',
+            paymentDate: 'Payment Date',
+            paymentAmount: 'Amount',
+            paymentMethod: 'Payment Method',
+            bankAccountLastFive: 'Account Last 5 Digits'
+          }
+        }
+      }
     }
   },
   'zh-TW': {
     nav: {
       searchReport: '報告檢索',
+      memberCenter: '會員中心',
     },
     home: {
-      subtitle: '奢侈品鑑定報告查詢',
+      tagline: '透明交易．專業鑑定．真誠服務',
+      heroTitle: 'REAL YOU',
+      heroDescription: '查詢商品鑑定報告，管理您的會員資料與訂單記錄——REAL YOU 為您把關每一件精品的真偽，用透明與專業贏得您的信任。',
+      ctaSearch: '查詢鑑定報告',
+      ctaMember: '會員中心'
+    },
+    identificationReport: {
+      subtitle: '精品鑑定報告查詢',
       title: 'REAL YOU 鑑定證書',
       description: '請輸入 36 碼商品識別 ID，即可查看商品真品證明書、詳細規格及細節檢驗圖庫。',
       idLabel: '商品 ID (UUID)',
@@ -261,6 +335,64 @@ const messages = {
         },
         validation: {
           required: '此欄位為必填。'
+        }
+      }
+    },
+    member: {
+      gate: {
+        loading: '登入中...',
+        serviceUnavailable: '服務暫時無法使用，請稍後再試。',
+        notBound: '此 LINE 帳號尚未綁定會員資料，請先透過訂單通知連結完成綁定。',
+        retry: '重試'
+      },
+      nav: {
+        profile: '會員資料',
+        serviceOrders: '服務單',
+        salesOrders: '訂單'
+      },
+      profile: {
+        title: '會員中心',
+        sectionTitle: '會員資料',
+        notProvided: '未填寫',
+        editButton: '編輯',
+        saveButton: '儲存',
+        cancelButton: '取消',
+        saving: '儲存中...',
+        errorGeneric: '發生錯誤，請稍候再試。',
+        fields: {
+          name: '姓名',
+          phoneNumber: '手機號碼',
+          email: '電子郵件',
+          residentialAddress: '戶籍地址'
+        }
+      },
+      orders: {
+        loadMore: '載入更多',
+        backToList: '返回',
+        errorGeneric: '發生錯誤，請稍候再試。',
+        errorNotFound: '找不到此筆紀錄。',
+        retry: '重試',
+        service: {
+          title: '服務單記錄',
+          empty: '目前沒有服務單記錄。',
+          consignmentStartDate: '寄售起始日',
+          consignmentEndDate: '寄售到期日',
+          renewalOption: '續約選項'
+        },
+        sales: {
+          title: '訂單記錄',
+          empty: '目前沒有訂單記錄。',
+          paymentStatus: '付款狀態',
+          shippingStatus: '出貨狀態',
+          subtotalAmount: '小計',
+          shippingFee: '運費',
+          paymentRecords: {
+            heading: '付款紀錄',
+            paymentDate: '付款日期',
+            paymentAmount: '金額',
+            paymentMethod: '付款方式',
+            bankAccountLastFive: '帳號末五碼'
+          }
         }
       }
     }
