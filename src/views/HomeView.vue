@@ -10,7 +10,7 @@
       <span class="font-data-mono text-label-caps text-primary tracking-[0.2em] uppercase mb-4 block">
         {{ $t('home.tagline') }}
       </span>
-      <h1 class="font-headline-md text-4xl md:text-5xl text-on-surface mb-6 font-serif">
+      <h1 class="brand-hero-title text-4xl md:text-5xl text-on-surface mb-6">
         {{ $t('home.heroTitle') }}
       </h1>
       <p class="font-body-md text-secondary max-w-md mx-auto mb-10">
@@ -36,5 +36,12 @@
 </template>
 
 <style scoped>
-/* Custom styled element */
+/* 比照 App.vue 的 .brand-logo-nav 品牌字型（AFuturaOrto），讓 Hero 大標題
+   跟 nav bar 的 REAL YOU 品牌字保持一致，只是尺寸放大配合 Hero 區塊。 */
+.brand-hero-title {
+  font-family: "AFuturaOrto", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
 </style>

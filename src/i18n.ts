@@ -8,7 +8,7 @@ const messages = {
     },
     home: {
       tagline: 'TRANSPARENT · PROFESSIONAL · SINCERE',
-      heroTitle: 'be REAL YOU',
+      heroTitle: 'REAL YOU',
       heroDescription: 'Look up product authentication reports and manage your member profile and order history — REAL YOU safeguards the authenticity of every piece, earning your trust through transparency and professionalism.',
       ctaSearch: 'VIEW AUTHENTICATION REPORT',
       ctaMember: 'MEMBER CENTER'
@@ -206,7 +206,7 @@ const messages = {
     },
     home: {
       tagline: '透明交易．專業鑑定．真誠服務',
-      heroTitle: 'be REAL YOU',
+      heroTitle: 'REAL YOU',
       heroDescription: '查詢商品鑑定報告，管理您的會員資料與訂單記錄——REAL YOU 為您把關每一件精品的真偽，用透明與專業贏得您的信任。',
       ctaSearch: '查詢鑑定報告',
       ctaMember: '會員中心'
