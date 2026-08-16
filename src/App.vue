@@ -18,11 +18,11 @@ const toggleLocale = () => {
         <router-link to="/" class="brand-logo-nav hover:opacity-80 transition-opacity">
           REAL YOU
         </router-link>
-        <div class="flex items-center gap-6">
-          <router-link :to="{ name: 'identification-report' }" class="font-label-caps text-xs tracking-wider text-secondary hover:text-primary transition-colors">
+        <div class="flex items-center gap-4">
+          <router-link :to="{ name: 'identification-report' }" class="font-label-caps text-xs tracking-wider text-secondary hover:text-primary transition-colors whitespace-nowrap">
             {{ $t('nav.searchReport') }}
           </router-link>
-          <router-link :to="{ name: 'member-profile' }" class="font-label-caps text-xs tracking-wider text-secondary hover:text-primary transition-colors">
+          <router-link :to="{ name: 'member-profile' }" class="font-label-caps text-xs tracking-wider text-secondary hover:text-primary transition-colors whitespace-nowrap">
             {{ $t('nav.memberCenter') }}
           </router-link>
           <button @click="toggleLocale" class="font-label-caps text-xs tracking-wider text-secondary hover:text-primary transition-colors border border-outline-variant/30 px-2 py-1 rounded hover:border-primary">

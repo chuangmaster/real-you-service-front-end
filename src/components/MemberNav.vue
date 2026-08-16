@@ -51,7 +51,7 @@ const activeTabName = computed(() => {
        顯示兩條頂部列 -->
   <nav class="hidden md:flex fixed top-0 left-0 right-0 z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30">
     <div class="max-w-container-max mx-auto px-margin-mobile h-16 w-full flex items-center justify-between">
-      <span class="brand-logo-nav">REAL YOU</span>
+      <router-link to="/" class="brand-logo-nav">REAL YOU</router-link>
       <div class="flex items-center gap-6">
         <router-link
           v-for="tab in TABS"

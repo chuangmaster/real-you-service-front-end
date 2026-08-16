@@ -23,7 +23,9 @@ const toggleLocale = () => {
         {{ locale === 'en' ? '繁中' : 'EN' }}
       </button>
       <div class="md:hidden flex justify-center pt-8 pb-4">
-        <img src="/favicon.png" alt="REAL YOU" class="w-10 h-10 rounded-xl" />
+        <router-link to="/">
+          <img src="/favicon.png" alt="REAL YOU" class="w-10 h-10 rounded-xl" />
+        </router-link>
       </div>
 
       <MemberNav />
