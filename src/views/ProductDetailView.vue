@@ -374,7 +374,7 @@ watch(() => route.params.id, (newId) => {
       <span class="material-symbols-outlined text-primary text-[48px] mb-6">gpp_maybe</span>
       <h2 class="font-headline-sm text-on-surface mb-4">{{ $t('detail.errorTitle') }}</h2>
       <p class="font-body-md text-secondary mb-8">{{ error }}</p>
-      <router-link to="/" class="bg-primary text-white px-10 py-4 font-label-caps text-label-caps tracking-widest hover:bg-primary-container transition-colors duration-300">
+      <router-link :to="{ name: 'identification-report' }" class="bg-primary text-white px-10 py-4 font-label-caps text-label-caps tracking-widest hover:bg-primary-container transition-colors duration-300">
         {{ $t('detail.returnBtn') }}
       </router-link>
     </div>
