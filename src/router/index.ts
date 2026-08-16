@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import IdentificationReportView from '../views/IdentificationReportView.vue'
 import ProductDetailView from '../views/ProductDetailView.vue'
 import OrderView from '../views/OrderView.vue'
 import MemberLayout from '../views/member/MemberLayout.vue'
@@ -24,7 +25,13 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     name: 'home',
     component: HomeView,
-    meta: { title: 'REAL YOU | 精品鑑定查詢' }
+    meta: { title: 'REAL YOU | 精品鑑定權威' }
+  },
+  {
+    path: '/identification-report',
+    name: 'identification-report',
+    component: IdentificationReportView,
+    meta: { title: 'REAL YOU | 鑑定報告查詢' }
   },
   {
     path: '/product/:id',
