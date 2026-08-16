@@ -42,7 +42,7 @@ const handleSearch = () => {
       <span class="font-data-mono text-label-caps text-primary tracking-[0.2em] uppercase mb-4 block">
         {{ $t('identificationReport.subtitle') }}
       </span>
-      <h1 class="font-headline-md text-4xl md:text-5xl text-on-surface mb-8 font-serif">
+      <h1 class="brand-hero-title text-4xl md:text-5xl text-on-surface mb-8">
         {{ $t('identificationReport.title') }}
       </h1>
       <p class="font-body-md text-secondary max-w-md mx-auto mb-12">
@@ -91,5 +91,12 @@ const handleSearch = () => {
 </template>
 
 <style scoped>
-/* Custom styled element */
+/* 比照 App.vue 的 .brand-logo-nav 與 HomeView.vue 的 .brand-hero-title，
+   讓這頁的標題跟 nav bar 的品牌字保持一致。 */
+.brand-hero-title {
+  font-family: "AFuturaOrto", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
 </style>

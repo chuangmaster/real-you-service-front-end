@@ -212,7 +212,7 @@ const messages = {
       ctaMember: '會員中心'
     },
     identificationReport: {
-      subtitle: '奢侈品鑑定報告查詢',
+      subtitle: '精品鑑定報告查詢',
       title: 'REAL YOU 鑑定證書',
       description: '請輸入 36 碼商品識別 ID，即可查看商品真品證明書、詳細規格及細節檢驗圖庫。',
       idLabel: '商品 ID (UUID)',
