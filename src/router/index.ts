@@ -34,10 +34,14 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'REAL YOU | 鑑定報告查詢' }
   },
   {
-    path: '/product/:id',
+    path: '/identification-report/:id',
     name: 'product-detail',
     component: ProductDetailView,
     meta: { title: 'REAL YOU | 精品鑑定證書' }
+  },
+  {
+    path: '/product/:id',
+    redirect: (to) => ({ name: 'product-detail', params: to.params })
   },
   {
     path: '/order',
