@@ -33,10 +33,10 @@ export default defineConfig({
         },
         rewrite: (path) => path.replace(/^\/order/, '/api/public/orders/share'),
       },
-      '^/product/.+/share$': {
+      '^/identification-report/.+/share$': {
         target: 'http://localhost:5100',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/product\/(.+)\/share$/, '/api/public/inventory/$1/share'),
+        rewrite: (path) => path.replace(/^\/identification-report\/(.+)\/share$/, '/api/public/inventory/$1/share'),
       }
     }
   }
