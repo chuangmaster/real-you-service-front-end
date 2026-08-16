@@ -7,9 +7,9 @@ const messages = {
       memberCenter: 'Member Center',
     },
     home: {
-      tagline: 'TRUSTED LUXURY AUTHENTICATION',
-      heroTitle: 'Authenticity You Can Trust',
-      heroDescription: 'REAL YOU delivers professional luxury goods authentication, backed by years of expert inspection — giving every piece verifiable proof of authenticity.',
+      tagline: 'TRANSPARENT · PROFESSIONAL · SINCERE',
+      heroTitle: 'be REAL YOU',
+      heroDescription: 'Look up product authentication reports and manage your member profile and order history — REAL YOU safeguards the authenticity of every piece, earning your trust through transparency and professionalism.',
       ctaSearch: 'VIEW AUTHENTICATION REPORT',
       ctaMember: 'MEMBER CENTER'
     },
@@ -205,9 +205,9 @@ const messages = {
       memberCenter: '會員中心',
     },
     home: {
-      tagline: '精品鑑定權威',
-      heroTitle: '真偽，一眼可鑑',
-      heroDescription: 'REAL YOU 提供專業精品鑑定服務，結合多年鑑定團隊經驗，為您的每一件精品建立可靠的真偽證明。',
+      tagline: '透明交易．專業鑑定．真誠服務',
+      heroTitle: 'be REAL YOU',
+      heroDescription: '查詢商品鑑定報告，管理您的會員資料與訂單記錄——REAL YOU 為您把關每一件精品的真偽，用透明與專業贏得您的信任。',
       ctaSearch: '查詢鑑定報告',
       ctaMember: '會員中心'
     },

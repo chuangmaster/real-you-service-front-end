@@ -1,7 +1,3 @@
-<script setup lang="ts">
-import heroImage from '../assets/hero.png'
-</script>
-
 <template>
   <div class="relative min-h-[80vh] flex items-center px-margin-mobile py-16 overflow-hidden">
     <!-- Background glow elements -->
@@ -10,42 +6,30 @@ import heroImage from '../assets/hero.png'
       <div class="absolute bottom-[20%] right-[10%] w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px]"></div>
     </div>
 
-    <div class="relative z-10 w-full max-w-container-max mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-      <!-- Hero image -->
-      <div class="flex justify-center">
-        <img
-          :src="heroImage"
-          alt="REAL YOU"
-          class="w-full max-w-sm rounded-xl border border-outline-variant/30 object-cover shadow-sm"
-        />
-      </div>
+    <div class="relative z-10 w-full max-w-container-max mx-auto text-center">
+      <span class="font-data-mono text-label-caps text-primary tracking-[0.2em] uppercase mb-4 block">
+        {{ $t('home.tagline') }}
+      </span>
+      <h1 class="font-headline-md text-4xl md:text-5xl text-on-surface mb-6 font-serif">
+        {{ $t('home.heroTitle') }}
+      </h1>
+      <p class="font-body-md text-secondary max-w-md mx-auto mb-10">
+        {{ $t('home.heroDescription') }}
+      </p>
 
-      <!-- Text + CTAs -->
-      <div class="text-center md:text-left">
-        <span class="font-data-mono text-label-caps text-primary tracking-[0.2em] uppercase mb-4 block">
-          {{ $t('home.tagline') }}
-        </span>
-        <h1 class="font-headline-md text-4xl md:text-5xl text-on-surface mb-6 font-serif">
-          {{ $t('home.heroTitle') }}
-        </h1>
-        <p class="font-body-md text-secondary max-w-md mx-auto md:mx-0 mb-10">
-          {{ $t('home.heroDescription') }}
-        </p>
-
-        <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-          <router-link
-            :to="{ name: 'identification-report' }"
-            class="bg-primary text-white px-8 py-4 font-label-caps text-label-caps tracking-widest hover:bg-primary-container transition-colors duration-300 shadow-sm text-center"
-          >
-            {{ $t('home.ctaSearch') }}
-          </router-link>
-          <router-link
-            :to="{ name: 'member-profile' }"
-            class="border border-outline-variant/50 text-on-surface px-8 py-4 font-label-caps text-label-caps tracking-widest hover:border-primary hover:text-primary transition-colors duration-300 text-center"
-          >
-            {{ $t('home.ctaMember') }}
-          </router-link>
-        </div>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <router-link
+          :to="{ name: 'identification-report' }"
+          class="bg-primary text-white px-8 py-4 font-label-caps text-label-caps tracking-widest hover:bg-primary-container transition-colors duration-300 shadow-sm text-center"
+        >
+          {{ $t('home.ctaSearch') }}
+        </router-link>
+        <router-link
+          :to="{ name: 'member-profile' }"
+          class="border border-outline-variant/50 text-on-surface px-8 py-4 font-label-caps text-label-caps tracking-widest hover:border-primary hover:text-primary transition-colors duration-300 text-center"
+        >
+          {{ $t('home.ctaMember') }}
+        </router-link>
       </div>
     </div>
   </div>
